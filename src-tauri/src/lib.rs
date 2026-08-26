@@ -38,6 +38,9 @@ pub fn run() {
             commands::git::git_log,
             commands::git::git_stage_all,
             commands::git::git_unstage_all,
+            commands::archive::archive_list,
+            commands::archive::archive_extract_file,
+            commands::archive::archive_extract_to,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

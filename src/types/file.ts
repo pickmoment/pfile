@@ -7,6 +7,7 @@ export type FileCategory =
   | 'audio'
   | 'video'
   | 'document'
+  | 'archive'
   | 'other';
 
 export interface FileMetadata {
@@ -116,4 +117,22 @@ export interface GitLogEntry {
   email: string;
   timestamp: number;
   relative_time: string;
+}
+
+// ── Archive Types ───────────────────────────────────────────────
+
+export interface ArchiveEntry {
+  path: string;
+  is_dir: boolean;
+  size: number;
+  compressed_size: number | null;
+  modified_ms: number | null;
+}
+
+export interface ArchiveInfo {
+  format: string;
+  total_entries: number;
+  total_size: number;
+  compressed_size: number;
+  entries: ArchiveEntry[];
 }

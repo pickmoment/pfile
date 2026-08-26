@@ -11,6 +11,7 @@ import { DataViewer } from './DataViewer';
 import { MediaViewer } from './MediaViewer';
 import { DiffViewer } from './DiffViewer';
 import { ExcelViewer } from './ExcelViewer';
+import { ArchiveViewer } from './ArchiveViewer';
 import { Sparkles, FileText, ArrowLeftRight, Binary, ExternalLink, Minimize2 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters';
 
@@ -111,6 +112,7 @@ export const ViewerContainer: React.FC = () => {
 
   const ext = selectedFile.extension?.toLowerCase() || '';
   const isExcel = ext === 'xlsx' || ext === 'xls' || ext === 'xlsm' || ext === 'xlsb' || ext === 'ods';
+  const isArchive = selectedFile.category === 'archive';
   const isMedia =
     selectedFile.category === 'image' ||
     selectedFile.category === 'audio' ||
@@ -158,6 +160,8 @@ export const ViewerContainer: React.FC = () => {
             targetFile={diffTargetFile}
             onClose={() => setDiffTargetFile(null)}
           />
+        ) : isArchive ? (
+          <ArchiveViewer file={selectedFile} />
         ) : isExcel ? (
           <ExcelViewer
             file={selectedFile}

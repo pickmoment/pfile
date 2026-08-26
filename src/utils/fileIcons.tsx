@@ -16,6 +16,7 @@ import {
   Database,
   Layers,
   Sparkles,
+  FileArchive,
 } from 'lucide-react';
 import { FileCategory } from '../types/file';
 
@@ -53,6 +54,10 @@ export function getFileIcon(
 
   if (category === 'video') {
     return <Video className={`${className} text-rose-400 flex-shrink-0`} />;
+  }
+
+  if (category === 'archive') {
+    return <FileArchive className={`${className} text-violet-400 flex-shrink-0`} />;
   }
 
   if (category === 'data') {

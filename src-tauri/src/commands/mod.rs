@@ -3,3 +3,4 @@ pub mod tokens;
 pub mod watcher;
 pub mod system;
 pub mod git;
+pub mod archive;

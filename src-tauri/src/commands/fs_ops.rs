@@ -16,6 +16,7 @@ pub enum FileCategory {
     Audio,
     Video,
     Document,
+    Archive,
     Other,
 }
 
@@ -77,10 +78,15 @@ pub fn detect_category_and_binary(extension: Option<&str>, is_dir: bool) -> (Fil
         | "kt" | "kts" | "dart" | "zig" | "scala" | "r" | "perl" | "dockerfile" | "proto"
         | "graphql" | "prisma" | "lock" | "ini" | "cfg" | "conf" => (FileCategory::Code, false),
 
-        // Binary archives, executables, databases
-        "zip" | "rar" | "7z" | "tar" | "gz" | "bz2" | "xz" | "exe" | "dll" | "so" | "dylib"
-        | "bin" | "iso" | "wasm" | "parquet" | "arrow" | "db" | "sqlite" | "sqlite3"
-        | "class" | "jar" | "pyc" => (FileCategory::Other, true),
+        // Archives (binary, previewable)
+        "zip" | "jar" | "war" | "ear" | "apk" | "ipa" | "whl" | "egg"
+        | "tar" | "gz" | "tgz" | "bz2" | "xz" | "zst"
+        | "rar" | "7z" | "iso" | "cab" | "deb" | "rpm" => (FileCategory::Archive, true),
+
+        // Binary executables, databases, etc.
+        "exe" | "dll" | "so" | "dylib"
+        | "bin" | "wasm" | "parquet" | "arrow" | "db" | "sqlite" | "sqlite3"
+        | "class" | "pyc" => (FileCategory::Other, true),
 
         _ => (FileCategory::Other, false),
     }
