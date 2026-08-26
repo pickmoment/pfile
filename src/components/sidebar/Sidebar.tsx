@@ -9,18 +9,18 @@ export const Sidebar: React.FC = () => {
   const currentDirectory = useFileStore((s) => s.currentDirectory);
 
   return (
-    <aside className="w-full h-full bg-[#11131c] border-r border-slate-800/80 flex flex-col select-none overflow-hidden">
+    <aside className="w-full h-full bg-[var(--s4)] border-r border-[var(--bd2)] flex flex-col select-none overflow-hidden">
       {/* Pinned Favorites */}
       <Favorites />
 
       {/* Directory File Tree Header */}
-      <div className="px-3 py-1.5 flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800/40">
+      <div className="px-3 py-1.5 flex items-center justify-between text-[11px] font-semibold text-[var(--tx4)] uppercase tracking-wider border-b border-[var(--bd2)]">
         <div className="flex items-center gap-1.5">
           <HardDrive className="w-3.5 h-3.5 text-blue-400" />
           <span>Explorer</span>
         </div>
         {currentDirectory && (
-          <span className="text-[10px] text-slate-500 font-mono lowercase">
+          <span className="text-[10px] text-[var(--tx5)] font-mono lowercase">
             {files.length} items
           </span>
         )}

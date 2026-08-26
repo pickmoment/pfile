@@ -97,5 +97,5 @@ export function getFileIcon(
     return <FileText className={`${className} text-red-400 flex-shrink-0`} />;
   }
 
-  return <FileIcon className={`${className} text-slate-400 flex-shrink-0`} />;
+  return <FileIcon className={`${className} text-[var(--tx4)] flex-shrink-0`} />;
 }

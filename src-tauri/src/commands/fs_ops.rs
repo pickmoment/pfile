@@ -91,7 +91,7 @@ pub fn detect_category(extension: Option<&str>, is_dir: bool) -> FileCategory {
 }
 
 #[cfg(target_os = "windows")]
-fn check_is_hidden(path: &Path, name: &str) -> bool {
+pub fn check_is_hidden(path: &Path, name: &str) -> bool {
     if name.starts_with('.') {
         return true;
     }
@@ -103,7 +103,7 @@ fn check_is_hidden(path: &Path, name: &str) -> bool {
 }
 
 #[cfg(not(target_os = "windows"))]
-fn check_is_hidden(_path: &Path, name: &str) -> bool {
+pub fn check_is_hidden(_path: &Path, name: &str) -> bool {
     name.starts_with('.')
 }
 

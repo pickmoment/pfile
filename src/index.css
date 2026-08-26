@@ -2,23 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Theme: Dark (default) ===== */
 :root {
-  --background: #0b0c12;
-  --foreground: #e2e8f0;
-  --sidebar-bg: #11131c;
-  --sidebar-fg: #cbd5e1;
-  --sidebar-border: #1e2230;
-  --sidebar-accent: #3b82f6;
-  --sidebar-hover: rgba(59, 130, 246, 0.1);
-  --panel-bg: #0f1118;
-  --panel-border: #1e2230;
+  /* Surface layers (deepest → most elevated) */
+  --s0: #090a0f;
+  --s1: #0b0c12;
+  --s2: #0d0f15;
+  --s3: #0f1118;
+  --s4: #11131c;
+  --s5: #141724;
+  --s6: #181c28;
+  --s7: #1e2230;
+  --s8: #282e42;
+
+  /* Text */
+  --tx1: #f1f5f9;   /* primary */
+  --tx2: #e2e8f0;   /* secondary */
+  --tx3: #cbd5e1;   /* tertiary */
+  --tx4: #94a3b8;   /* muted */
+  --tx5: #64748b;   /* faint */
+  --tx6: #475569;   /* dim */
+  --tx7: #334155;   /* divider text */
+
+  /* Borders */
+  --bd1: #334155;   /* strong (slate-700) */
+  --bd2: #1e293b;   /* subtle (slate-800) */
+
+  /* Background utilities (button/badge surfaces) */
+  --bg-strong: #334155;
+  --bg-muted: #1e293b;
+  --bg-deep: #0f172a;
+
+  /* Overlay / backdrop */
+  --overlay: rgba(0, 0, 0, 0.70);
+
+  /* Scrollbar */
+  --scrollbar-thumb: #252a3d;
+  --scrollbar-hover: #3b4260;
+
+  /* Selection */
+  --selection-bg: rgba(59, 130, 246, 0.4);
+  --selection-fg: #ffffff;
+
+  /* Accent (unchanged across themes) */
+  --accent: #3b82f6;
+}
+
+/* ===== Theme: Light ===== */
+[data-theme="light"] {
+  --s0: #f8fafc;
+  --s1: #f1f5f9;
+  --s2: #ffffff;
+  --s3: #f8fafc;
+  --s4: #ffffff;
+  --s5: #f1f5f9;
+  --s6: #e2e8f0;
+  --s7: #cbd5e1;
+  --s8: #94a3b8;
+
+  --tx1: #0f172a;
+  --tx2: #1e293b;
+  --tx3: #334155;
+  --tx4: #64748b;
+  --tx5: #94a3b8;
+  --tx6: #cbd5e1;
+  --tx7: #e2e8f0;
+
+  --bd1: #cbd5e1;
+  --bd2: #e2e8f0;
+
+  --bg-strong: #cbd5e1;
+  --bg-muted: #e2e8f0;
+  --bg-deep: #f1f5f9;
+
+  --overlay: rgba(0, 0, 0, 0.30);
+
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-hover: #94a3b8;
+
+  --selection-bg: rgba(59, 130, 246, 0.25);
+  --selection-fg: #0f172a;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--s1);
+  color: var(--tx1);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   user-select: none;
   -webkit-font-smoothing: antialiased;
@@ -35,12 +105,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #252a3d;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4260;
+  background: var(--scrollbar-hover);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -57,6 +127,6 @@ code, pre, kbd {
 }
 
 ::selection {
-  background-color: rgba(59, 130, 246, 0.4);
-  color: #ffffff;
+  background-color: var(--selection-bg);
+  color: var(--selection-fg);
 }

@@ -68,7 +68,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -84,7 +84,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block text-xs font-medium text-slate-300">
+        <label className="block text-xs font-medium text-[var(--tx3)]">
           {type === 'file' ? 'File Name (with extension)' : 'Folder Name'}
         </label>
         <input
@@ -93,10 +93,10 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={type === 'file' ? 'e.g. analysis.md, server.ts' : 'e.g. components, docs'}
-          className="w-full px-3 py-2 text-xs bg-[#0f1117] border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+          className="w-full px-3 py-2 text-xs bg-[var(--s3)] border border-[var(--bd1)] rounded-lg text-[var(--tx1)] placeholder-[var(--tx5)] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
         />
-        <p className="text-[11px] text-slate-400">
-          Location: <span className="font-mono text-slate-300">{parentPath}</span>
+        <p className="text-[11px] text-[var(--tx4)]">
+          Location: <span className="font-mono text-[var(--tx3)]">{parentPath}</span>
         </p>
       </form>
     </Modal>
@@ -171,7 +171,7 @@ export const RenameDialog: React.FC<RenameDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -187,13 +187,13 @@ export const RenameDialog: React.FC<RenameDialogProps> = ({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block text-xs font-medium text-slate-300">New Name</label>
+        <label className="block text-xs font-medium text-[var(--tx3)]">New Name</label>
         <input
           ref={inputRef}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 text-xs bg-[#0f1117] border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+          className="w-full px-3 py-2 text-xs bg-[var(--s3)] border border-[var(--bd1)] rounded-lg text-[var(--tx1)] placeholder-[var(--tx5)] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
         />
       </form>
     </Modal>
@@ -252,7 +252,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -275,7 +275,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             <p className="font-medium text-rose-200">
               Are you sure you want to delete {targetPaths.length} item(s)?
             </p>
-            <ul className="mt-1.5 max-h-24 overflow-y-auto space-y-0.5 text-slate-300 font-mono text-[11px]">
+              <ul className="mt-1.5 max-h-24 overflow-y-auto space-y-0.5 text-[var(--tx3)] font-mono text-[11px]">
               {targetPaths.map((p) => (
                 <li key={p} className="truncate">
                   • {p.split('/').pop() || p}
@@ -285,12 +285,12 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           </div>
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
+        <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--tx3)] select-none">
           <input
             type="checkbox"
             checked={permanent}
             onChange={(e) => setPermanent(e.target.checked)}
-            className="rounded border-slate-700 bg-slate-900 text-rose-500 focus:ring-rose-500/30"
+            className="rounded border-[var(--bd1)] bg-[var(--bg-deep)] text-rose-500 focus:ring-rose-500/30"
           />
           <span>Permanently delete (skip OS Recycle Bin / Trash)</span>
         </label>

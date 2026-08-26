@@ -24,6 +24,7 @@ import {
   Folder,
   Eye,
   EyeOff,
+  Star,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useFileStore } from '../../store/useFileStore';
@@ -43,6 +44,9 @@ const CATEGORY_TABS: Array<{ id: FileFilterCategory; label: string; icon: React.
 export const TopToolbar: React.FC = () => {
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const setCurrentDirectory = useFileStore((s) => s.setCurrentDirectory);
+  const favorites = useFileStore((s) => s.favorites);
+  const addFavorite = useFileStore((s) => s.addFavorite);
+  const removeFavorite = useFileStore((s) => s.removeFavorite);
   const refreshDirectory = useFileStore((s) => s.refreshDirectory);
   const searchQuery = useFileStore((s) => s.searchQuery);
   const setSearchQuery = useFileStore((s) => s.setSearchQuery);
@@ -165,12 +169,12 @@ export const TopToolbar: React.FC = () => {
       case 'drive':
         return <HardDrive className="w-3.5 h-3.5 text-amber-400" />;
       default:
-        return <Folder className="w-3.5 h-3.5 text-slate-400" />;
+        return <Folder className="w-3.5 h-3.5 text-[var(--tx4)]" />;
     }
   };
 
   return (
-    <div className="bg-[#141722] border-b border-slate-800 flex flex-col gap-2 p-2 text-xs text-slate-300 select-none">
+    <div className="bg-[var(--s5)] border-b border-[var(--bd2)] flex flex-col gap-2 p-2 text-xs text-[var(--tx3)] select-none">
       {/* Upper Row: Back/Forward/Up + Address Bar & Primary Actions */}
       <div className="flex items-center justify-between gap-2">
         {/* Left: Navigation Buttons (Back, Forward, Up, Open, Places) */}
@@ -179,7 +183,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => goBack()}
             disabled={!canGoBack}
             title="Back (Alt+Left)"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-white transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -188,7 +192,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => goForward()}
             disabled={!canGoForward}
             title="Forward (Alt+Right)"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-white transition-colors"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -196,7 +200,7 @@ export const TopToolbar: React.FC = () => {
           <button
             onClick={() => goUp()}
             title="Up to Parent Directory (Alt+Up)"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-white transition-colors"
           >
             <ArrowUp className="w-3.5 h-3.5" />
           </button>
@@ -209,19 +213,35 @@ export const TopToolbar: React.FC = () => {
             <span>Open</span>
           </button>
 
+          {/* Favorite current directory */}
+          {currentDirectory && (() => {
+            const isFav = favorites.includes(currentDirectory);
+            return (
+              <button
+                onClick={() => {
+                  if (isFav) removeFavorite(currentDirectory);
+                  else addFavorite(currentDirectory);
+                }}
+                title={isFav ? 'Remove directory from favorites' : 'Add directory to favorites'}
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white transition-colors"
+              >
+                <Star className={`w-3.5 h-3.5 ${isFav ? 'text-amber-400 fill-amber-400' : ''}`} />
+              </button>
+            );
+          })()}
           {/* Quick Places Popover Trigger */}
           <div ref={placesDropdownRef} className="relative">
             <button
               onClick={() => setPlacesDropdownOpen(!placesDropdownOpen)}
               title="Quick Places & Drives"
-              className="flex items-center gap-1 p-1.5 rounded-lg bg-[#1e2230] hover:bg-[#282e42] border border-slate-700/70 text-slate-300 hover:text-white text-xs transition-colors"
+              className="flex items-center gap-1 p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white text-xs transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-indigo-400" />
             </button>
 
             {placesDropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 w-56 bg-[#181c28] border border-slate-700/80 rounded-xl shadow-2xl py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="absolute left-0 top-full mt-1 w-56 bg-[var(--s6)] border border-[var(--bd1)] rounded-xl shadow-2xl py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--tx5)]">
                   Quick System Places
                 </div>
                 <div className="space-y-0.5 mt-1">
@@ -247,7 +267,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => refreshDirectory()}
             disabled={isLoading}
             title="Refresh Workspace (F5)"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-white transition-colors"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-400' : ''}`} />
           </button>
@@ -267,26 +287,26 @@ export const TopToolbar: React.FC = () => {
                   if (e.key === 'Escape') setIsAddressBarEditing(false);
                 }}
                 placeholder="Type absolute or relative path and press Enter..."
-                className="w-full px-2.5 py-1 text-xs bg-[#0b0d13] border border-blue-500 rounded-lg text-slate-100 font-mono focus:outline-none shadow-inner"
+                className="w-full px-2.5 py-1 text-xs bg-[var(--s2)] border border-blue-500 rounded-lg text-[var(--tx1)] font-mono focus:outline-none shadow-inner"
               />
             </form>
           ) : (
             <div
               onClick={() => setIsAddressBarEditing(true)}
               title="Click or press Ctrl+L to edit path directly"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0e1017] hover:bg-[#181c28] border border-slate-800/80 hover:border-slate-700 cursor-text transition-all text-[11.5px] font-mono overflow-x-auto no-scrollbar group"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--s2)] hover:bg-[var(--s6)] border border-[var(--bd2)] hover:border-[var(--bd1)] cursor-text transition-all text-[11.5px] font-mono overflow-x-auto no-scrollbar group"
             >
-              <span className="text-slate-600 group-hover:text-slate-400 mr-1 select-none">📂</span>
+              <span className="text-[var(--tx6)] group-hover:text-[var(--tx4)] mr-1 select-none">📂</span>
               {breadcrumbs.map((segment, idx) => (
                 <React.Fragment key={idx}>
-                  {idx > 0 && <ChevronRight className="w-3 h-3 text-slate-600 mx-0.5 flex-shrink-0" />}
+                  {idx > 0 && <ChevronRight className="w-3 h-3 text-[var(--tx6)] mx-0.5 flex-shrink-0" />}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleBreadcrumbClick(idx);
                     }}
                     className={`hover:text-blue-400 hover:underline px-1 py-0.2 rounded transition-colors truncate max-w-[140px] ${
-                      idx === breadcrumbs.length - 1 ? 'text-slate-100 font-semibold' : 'text-slate-400'
+                      idx === breadcrumbs.length - 1 ? 'text-[var(--tx1)] font-semibold' : 'text-[var(--tx4)]'
                     }`}
                     title={segment}
                   >
@@ -321,7 +341,7 @@ export const TopToolbar: React.FC = () => {
                   setCreateDialogOpen(true);
                 }}
                 title="Create New File"
-                className="p-1.5 rounded-lg bg-[#1e2230] hover:bg-[#282e42] border border-slate-700 text-slate-200 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-white transition-colors"
               >
                 <Plus className="w-3.5 h-3.5 text-sky-400" />
               </button>
@@ -331,7 +351,7 @@ export const TopToolbar: React.FC = () => {
                   setCreateDialogOpen(true);
                 }}
                 title="Create New Folder"
-                className="p-1.5 rounded-lg bg-[#1e2230] hover:bg-[#282e42] border border-slate-700 text-slate-200 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-white transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
               </button>
@@ -343,7 +363,7 @@ export const TopToolbar: React.FC = () => {
       {/* Lower Row: Category Filter Tabs & File Search Bar */}
       <div className="flex items-center justify-between gap-3">
         {/* Category Tabs */}
-        <div className="flex items-center gap-1 bg-[#0f1118] p-0.5 rounded-lg border border-slate-800">
+        <div className="flex items-center gap-1 bg-[var(--s3)] p-0.5 rounded-lg border border-[var(--bd2)]">
           {CATEGORY_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = categoryFilter === tab.id;
@@ -354,7 +374,7 @@ export const TopToolbar: React.FC = () => {
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    : 'text-[var(--tx4)] hover:text-[var(--tx2)] hover:bg-[var(--s7)]'
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -379,7 +399,7 @@ export const TopToolbar: React.FC = () => {
             className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-mono transition-colors ${
               showHiddenFiles
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                : 'bg-[#0f1118] border-slate-800 text-slate-400 hover:text-slate-200'
+                : 'bg-[var(--s3)] border-[var(--bd2)] text-[var(--tx4)] hover:text-[var(--tx2)]'
             }`}
           >
             {showHiddenFiles ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -388,19 +408,19 @@ export const TopToolbar: React.FC = () => {
 
           {/* Search Bar */}
           <div className="relative w-60">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[var(--tx5)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter files... (Ctrl+F)"
-              className="w-full pl-8 pr-7 py-1 text-xs bg-[#0f1118] border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all font-mono"
+              className="w-full pl-8 pr-7 py-1 text-xs bg-[var(--s3)] border border-[var(--bd2)] rounded-lg text-[var(--tx2)] placeholder-[var(--tx5)] focus:outline-none focus:border-blue-500 transition-all font-mono"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--tx4)] hover:text-[var(--tx2)]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

@@ -93,8 +93,8 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   if (isSvg && svgMode === 'code') {
     return (
       <div className="w-full h-full flex flex-col">
-        <div className="h-9 bg-[#11131c] border-b border-slate-800 px-3 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-mono">SVG XML Source</span>
+        <div className="h-9 bg-[var(--s4)] border-b border-[var(--bd2)] px-3 flex items-center justify-between text-xs">
+          <span className="text-[var(--tx4)] font-mono">SVG XML Source</span>
           <button
             onClick={() => setSvgMode('visual')}
             className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 text-white text-[11px]"
@@ -111,11 +111,11 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0b0c12] overflow-hidden select-none">
+    <div className="w-full h-full flex flex-col bg-[var(--s1)] overflow-hidden select-none">
       {/* Media Toolbar */}
-      <div className="h-9 bg-[#11131c] border-b border-slate-800/80 px-3 flex items-center justify-between text-xs text-slate-300">
-        <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-          <span className="uppercase text-slate-300 font-semibold">{ext}</span>
+      <div className="h-9 bg-[var(--s4)] border-b border-[var(--bd2)] px-3 flex items-center justify-between text-xs text-[var(--tx3)]">
+        <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--tx4)]">
+          <span className="uppercase text-[var(--tx3)] font-semibold">{ext}</span>
           <span>•</span>
           <span>{formatBytes(file.size)}</span>
         </div>
@@ -127,7 +127,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                 <button
                   onClick={() => setSvgMode('code')}
                   title="View SVG Source Code"
-                  className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] mr-1"
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] text-[11px] mr-1"
                 >
                   <Code2 className="w-3 h-3" />
                   <span>Source</span>
@@ -136,17 +136,17 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <button
                 onClick={() => setZoom((z) => Math.max(10, z - 25))}
                 title="Zoom Out"
-                className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="font-mono text-[11px] text-slate-400 w-12 text-center">
+              <span className="font-mono text-[11px] text-[var(--tx4)] w-12 text-center">
                 {zoom}%
               </span>
               <button
                 onClick={() => setZoom((z) => Math.min(500, z + 25))}
                 title="Zoom In"
-                className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
@@ -156,7 +156,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                   setPan({ x: 0, y: 0 });
                 }}
                 title="Reset Zoom & Pan"
-                className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -164,7 +164,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                 onClick={() => setShowCheckerboard((c) => !c)}
                 title="Toggle Transparency Grid"
                 className={`p-1.5 rounded transition-colors ${
-                  showCheckerboard ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-slate-800 text-slate-400'
+                  showCheckerboard ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
                 }`}
               >
                 <Grid className="w-3.5 h-3.5" />
@@ -183,8 +183,8 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         onMouseUp={handleMouseUp}
         className={`flex-1 w-full h-full flex items-center justify-center p-6 overflow-hidden relative ${
           showCheckerboard && isImage
-            ? 'bg-[radial-gradient(#1e2230_1px,transparent_1px)] [background-size:16px_16px] bg-[#0c0d14]'
-            : 'bg-[#090a0f]'
+            ? 'bg-[radial-gradient(var(--s7)_1px,transparent_1px)] [background-size:16px_16px] bg-[var(--s2)]'
+            : 'bg-[var(--s0)]'
         } ${isDragging ? 'cursor-grabbing' : isImage ? 'cursor-grab' : ''}`}
       >
         {isImage && (
@@ -206,20 +206,20 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         )}
 
         {isAudio && (
-          <div className="flex flex-col items-center justify-center gap-6 p-8 bg-[#141724] border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full">
+          <div className="flex flex-col items-center justify-center gap-6 p-8 bg-[var(--s5)] border border-[var(--bd2)] rounded-2xl shadow-2xl max-w-md w-full">
             <div className="w-20 h-20 rounded-full bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-inner">
               <Music className="w-10 h-10" />
             </div>
             <div className="text-center font-mono">
-              <h3 className="text-sm font-semibold text-slate-100 truncate max-w-xs">{file.name}</h3>
-              <p className="text-xs text-slate-500 mt-1">{formatBytes(file.size)}</p>
+              <h3 className="text-sm font-semibold text-[var(--tx1)] truncate max-w-xs">{file.name}</h3>
+              <p className="text-xs text-[var(--tx5)] mt-1">{formatBytes(file.size)}</p>
             </div>
             <audio src={dataUri} controls className="w-full" />
           </div>
         )}
 
         {isVideo && (
-          <div className="max-w-4xl max-h-full flex items-center justify-center bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800">
+          <div className="max-w-4xl max-h-full flex items-center justify-center bg-black rounded-xl overflow-hidden shadow-2xl border border-[var(--bd2)]">
             <video src={dataUri} controls className="w-full h-full max-h-[70vh]" />
           </div>
         )}
@@ -229,9 +229,9 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
             <object
               data={dataUri}
               type="application/pdf"
-              className="w-full h-full rounded-lg border border-slate-800"
+              className="w-full h-full rounded-lg border border-[var(--bd2)]"
             >
-              <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
+              <div className="flex flex-col items-center justify-center h-full text-[var(--tx4)] gap-2">
                 <p>PDF Viewer is not supported directly in this environment.</p>
                 <a
                   href={dataUri}

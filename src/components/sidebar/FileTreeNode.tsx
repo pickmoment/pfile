@@ -174,7 +174,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         } ${
           isSelected
             ? 'bg-blue-600/25 text-blue-200 font-medium border-l-2 border-blue-500'
-            : 'text-slate-300 hover:bg-slate-800/60 hover:text-slate-100'
+            : 'text-[var(--tx3)] hover:bg-[var(--s7)] hover:text-[var(--tx1)]'
         } ${isDragOver ? 'bg-indigo-600/30 ring-1 ring-indigo-500' : ''}`}
       >
         {/* Left Side: Expand icon + Category/Extension Icon + Name */}
@@ -185,7 +185,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
                 e.stopPropagation();
                 toggleDirExpanded(file.path);
               }}
-              className="p-0.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-transform"
+              className="p-0.5 rounded hover:bg-[var(--s7)] text-[var(--tx4)] hover:text-[var(--tx2)] transition-transform"
             >
               <ChevronRight
                 className={`w-3.5 h-3.5 transition-transform duration-150 ${
@@ -211,7 +211,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
                 if (e.key === 'Escape') setIsInlineRenaming(false);
               }}
               onClick={(e) => e.stopPropagation()}
-              className="px-1 py-0.5 text-xs bg-[#0b0d13] border border-blue-500 rounded text-slate-100 font-mono focus:outline-none w-full"
+              className="px-1 py-0.5 text-xs bg-[var(--s1)] border border-blue-500 rounded text-[var(--tx1)] font-mono focus:outline-none w-full"
             />
           ) : (
             <span
@@ -230,7 +230,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         {/* Right Side: Size & Hover Action Buttons */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {!file.is_dir && (
-            <span className="text-[10px] text-slate-500 font-mono group-hover:hidden">
+            <span className="text-[10px] text-[var(--tx5)] font-mono group-hover:hidden">
               {formatBytes(file.size)}
             </span>
           )}
@@ -241,7 +241,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               onRenameRequest(file);
             }}
             title="Rename (F2)"
-            className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
           >
             <Edit2 className="w-3 h-3" />
           </button>
@@ -252,7 +252,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               invoke('show_in_file_manager', { path: file.path });
             }}
             title="Show in Explorer"
-            className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-amber-300"
+            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-amber-300"
           >
             <FolderSearch className="w-3 h-3" />
           </button>
@@ -263,7 +263,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               onDeleteRequest(file);
             }}
             title="Delete"
-            className="p-1 rounded hover:bg-rose-900/50 text-slate-400 hover:text-rose-400"
+            className="p-1 rounded hover:bg-rose-900/50 text-[var(--tx4)] hover:text-rose-400"
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -273,7 +273,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               e.stopPropagation();
               onContextMenu(e, file);
             }}
-            className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
           >
             <MoreVertical className="w-3 h-3" />
           </button>
@@ -286,7 +286,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
           {filteredChildren.length === 0 ? (
             <div
               style={{ paddingLeft: `${(depth + 1) * 14 + 14}px` }}
-              className="py-1 text-[10.5px] text-slate-600 italic"
+              className="py-1 text-[10.5px] text-[var(--tx6)] italic"
             >
               (empty)
             </div>

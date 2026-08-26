@@ -34,15 +34,15 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   }, [onSave]);
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-[#0d0f15]">
+    <div className="relative w-full h-full flex flex-col bg-[var(--s2)]">
       {/* Code Editor Mini Controls Strip */}
-      <div className="h-7 bg-[#11131c] border-b border-slate-800/80 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none">
+      <div className="h-7 bg-[var(--s4)] border-b border-[var(--bd2)] px-3 flex items-center justify-between text-[11px] text-[var(--tx4)] select-none">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-slate-300 font-medium uppercase text-[10px] bg-slate-800 px-1.5 py-0.5 rounded">
+          <span className="font-mono text-[var(--tx3)] font-medium uppercase text-[10px] bg-[var(--bg-muted)] px-1.5 py-0.5 rounded">
             {language}
           </span>
-          <span className="text-slate-500">•</span>
-          <span className="text-slate-400 font-mono">
+          <span className="text-[var(--tx5)]">•</span>
+          <span className="text-[var(--tx4)] font-mono">
             {isEditing ? 'Editing Mode (Ctrl+S to save)' : 'Read-only Mode'}
           </span>
         </div>
@@ -52,7 +52,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             onClick={() => setWordWrap((w) => (w === 'on' ? 'off' : 'on'))}
             title="Toggle Word Wrap"
             className={`p-1 rounded transition-colors ${
-              wordWrap === 'on' ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-slate-800 text-slate-400'
+              wordWrap === 'on' ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
             }`}
           >
             <WrapText className="w-3.5 h-3.5" />
@@ -61,7 +61,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             onClick={() => setMinimapEnabled((m) => !m)}
             title="Toggle Minimap"
             className={`p-1 rounded transition-colors ${
-              minimapEnabled ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-slate-800 text-slate-400'
+              minimapEnabled ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />

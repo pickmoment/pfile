@@ -10,7 +10,7 @@ interface ViewerStore {
   viewportSize: DeviceViewport;
   isEditing: boolean;
   showToc: boolean;
-
+  contentOnly: boolean;
   setViewerMode: (mode: ViewerMode) => void;
   setDiffTargetFile: (file: FileMetadata | null) => void;
   setDiffMode: (mode: DiffDisplayMode) => void;
@@ -19,6 +19,7 @@ interface ViewerStore {
   setViewportSize: (size: DeviceViewport) => void;
   setIsEditing: (editing: boolean) => void;
   toggleToc: () => void;
+  toggleContentOnly: () => void;
   resetViewerState: () => void;
 }
 
@@ -31,6 +32,7 @@ export const useViewerStore = create<ViewerStore>((set) => ({
   viewportSize: 'desktop',
   isEditing: false,
   showToc: true,
+  contentOnly: false,
 
   setViewerMode: (mode) => set({ viewerMode: mode }),
   setDiffTargetFile: (file) => set({ diffTargetFile: file }),
@@ -43,6 +45,7 @@ export const useViewerStore = create<ViewerStore>((set) => ({
   setViewportSize: (size) => set({ viewportSize: size }),
   setIsEditing: (editing) => set({ isEditing: editing }),
   toggleToc: () => set((state) => ({ showToc: !state.showToc })),
+  toggleContentOnly: () => set((state) => ({ contentOnly: !state.contentOnly })),
   resetViewerState: () =>
     set({
       viewerMode: 'auto',

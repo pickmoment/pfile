@@ -1,8 +1,11 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::Ordering;
+use std::time::UNIX_EPOCH;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
-use crate::commands::fs_ops::{get_file_metadata, FileMetadata};
+use crate::commands::fs_ops::{detect_category_and_binary, check_is_hidden, FileMetadata};
+use crate::state::AppState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QuickPathItem {
@@ -128,59 +131,127 @@ pub fn get_quick_access_paths() -> Result<Vec<QuickPathItem>, String> {
 }
 
 #[tauri::command]
-pub fn search_files_recursive(
+pub async fn search_files_recursive(
+    state: tauri::State<'_, AppState>,
     root_path: String,
     query: String,
     max_results: Option<usize>,
     include_hidden: Option<bool>,
 ) -> Result<Vec<FileMetadata>, String> {
-    let root = Path::new(&root_path);
-    if !root.exists() || !root.is_dir() {
-        return Err(format!("Invalid search root: {}", root_path));
-    }
+    // Bump generation — any older in-flight search will notice and abort
+    let gen = state.search_generation.fetch_add(1, Ordering::SeqCst) + 1;
+    let search_gen = state.search_generation.clone();
 
-    let limit = max_results.unwrap_or(40);
-    let show_hidden = include_hidden.unwrap_or(false);
-    let query_lower = query.to_lowercase();
-    let mut matches = Vec::new();
+    tokio::task::spawn_blocking(move || {
+        let root = Path::new(&root_path);
+        if !root.exists() || !root.is_dir() {
+            return Err(format!("Invalid search root: {}", root_path));
+        }
 
-    let walker = WalkDir::new(root)
-        .max_depth(8)
-        .into_iter()
-        .filter_entry(|e| {
-            let file_name = e.file_name().to_string_lossy();
-            // Always skip heavy generated folders
-            if e.file_type().is_dir() {
-                if file_name == "node_modules"
-                    || file_name == "target"
-                    || file_name == "dist"
-                    || file_name == "build"
-                    || file_name == ".git"
-                    || file_name == ".next"
-                {
-                    return false;
+        let limit = max_results.unwrap_or(40);
+        let show_hidden = include_hidden.unwrap_or(false);
+        let query_lower = query.to_lowercase();
+        let mut matches = Vec::with_capacity(limit);
+        let mut checked: u32 = 0;
+
+        let walker = WalkDir::new(root)
+            .max_depth(8)
+            .into_iter()
+            .filter_entry(|e| {
+                let file_name = e.file_name().to_string_lossy();
+                if e.file_type().is_dir() {
+                    if matches!(
+                        file_name.as_ref(),
+                        "node_modules" | "target" | "dist" | "build" | ".git" | ".next"
+                            | "__pycache__" | ".svn" | ".hg" | "vendor" | ".cache"
+                    ) {
+                        return false;
+                    }
+                    if !show_hidden && file_name.starts_with('.') {
+                        return false;
+                    }
                 }
-                if !show_hidden && file_name.starts_with('.') {
-                    return false;
-                }
+                true
+            });
+
+        for entry_res in walker {
+            // Check cancellation every 256 entries to avoid overhead
+            checked += 1;
+            if checked & 0xFF == 0 && search_gen.load(Ordering::Relaxed) != gen {
+                return Ok(Vec::new()); // superseded by newer search
             }
-            true
-        });
-    for entry_res in walker {
-        if let Ok(entry) = entry_res {
-            let file_name = entry.file_name().to_string_lossy().to_lowercase();
-            if query_lower.is_empty() || file_name.contains(&query_lower) {
-                if let Ok(meta) = get_file_metadata(entry.path()) {
-                    matches.push(meta);
-                    if matches.len() >= limit {
-                        break;
+
+            let entry = match entry_res {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+
+            let file_name_os = entry.file_name().to_string_lossy();
+            let file_name_lower = file_name_os.to_lowercase();
+
+            if !query_lower.is_empty() {
+                if !file_name_lower.contains(&query_lower) {
+                    // Fallback: match against relative path (e.g. "src/utils")
+                    let rel = entry.path().strip_prefix(root).unwrap_or(entry.path());
+                    let rel_lower = rel.to_string_lossy().to_lowercase();
+                    if !rel_lower.contains(&query_lower) {
+                        continue;
                     }
                 }
             }
-        }
-    }
 
-    Ok(matches)
+            // Build metadata inline from WalkDir entry (avoids double stat)
+            let meta = match entry.metadata() {
+                Ok(m) => m,
+                Err(_) => continue,
+            };
+
+            let is_dir = meta.is_dir();
+            let name = file_name_os.to_string();
+            let path = entry.path();
+
+            let extension = if is_dir {
+                None
+            } else {
+                path.extension().map(|e| e.to_string_lossy().to_string())
+            };
+
+            let (category, is_binary) = detect_category_and_binary(extension.as_deref(), is_dir);
+            let is_hidden = check_is_hidden(path, &name);
+
+            let modified_ms = meta
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+
+            let size = if is_dir { 0 } else { meta.len() };
+            let readonly = meta.permissions().readonly();
+            let path_str = path.to_string_lossy().to_string().replace('\\', "/");
+
+            matches.push(FileMetadata {
+                name,
+                path: path_str,
+                is_dir,
+                size,
+                modified_ms,
+                extension,
+                category,
+                is_binary,
+                is_hidden,
+                readonly,
+            });
+
+            if matches.len() >= limit {
+                break;
+            }
+        }
+
+        Ok(matches)
+    })
+    .await
+    .map_err(|e| format!("Search task failed: {}", e))?
 }
 
 #[cfg(test)]

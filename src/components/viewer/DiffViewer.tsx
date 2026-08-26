@@ -64,9 +64,9 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   }, [changes]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0b0c12] select-text overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[var(--s1)] select-text overflow-hidden">
       {/* Diff Header */}
-      <div className="h-10 bg-[#12141e] border-b border-slate-800 px-4 flex items-center justify-between text-xs text-slate-300 select-none">
+      <div className="h-10 bg-[var(--s4)] border-b border-[var(--bd2)] px-4 flex items-center justify-between text-xs text-[var(--tx3)] select-none">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 font-semibold text-indigo-300">
             <GitCompare className="w-4 h-4 text-indigo-400" />
@@ -77,7 +77,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             <span className="text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
               - {originalFile.name} (Base)
             </span>
-            <span className="text-slate-500">vs</span>
+            <span className="text-[var(--tx5)]">vs</span>
             <span className="text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
               + {targetFile.name} (Modified)
             </span>
@@ -98,12 +98,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
         {/* Right: Mode switches and close */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-[#0a0b10] p-0.5 rounded-lg border border-slate-800">
+          <div className="flex items-center bg-[var(--s1)] p-0.5 rounded-lg border border-[var(--bd2)]">
             <button
               onClick={() => setDiffMode('side-by-side')}
               title="Side by Side"
               className={`p-1.5 rounded text-xs transition-colors ${
-                diffMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                diffMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-white'
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               onClick={() => setDiffMode('inline')}
               title="Inline Unified"
               className={`p-1.5 rounded text-xs transition-colors ${
-                diffMode === 'inline' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                diffMode === 'inline' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-white'
               }`}
             >
               <AlignJustify className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           <button
             onClick={onClose}
             title="Exit Diff Mode"
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-300 transition-colors"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-rose-300 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -131,7 +131,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
       {/* Diff Body */}
       {isLoading ? (
-        <div className="flex-1 flex items-center justify-center text-slate-500 text-xs">
+        <div className="flex-1 flex items-center justify-center text-[var(--tx5)] text-xs">
           Calculating diff...
         </div>
       ) : diffMode === 'side-by-side' ? (
@@ -154,7 +154,7 @@ const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
         const lines = change.value.replace(/\n$/, '').split('\n');
 
         return lines.map((line, lIdx) => {
-          let rowClass = 'hover:bg-slate-800/30 text-slate-300';
+          let rowClass = 'hover:bg-[var(--s7)] text-[var(--tx3)]';
           let sign = ' ';
           let oNum = origLine.toString();
           let tNum = targetLine.toString();
@@ -176,10 +176,10 @@ const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
 
           return (
             <div key={`${cIdx}-${lIdx}`} className={`flex items-start ${rowClass} py-0.5 px-1 rounded`}>
-              <div className="w-10 text-right pr-2 text-[10.5px] text-slate-600 select-none flex-shrink-0">
+              <div className="w-10 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0">
                 {oNum}
               </div>
-              <div className="w-10 text-right pr-2 text-[10.5px] text-slate-600 select-none flex-shrink-0 border-r border-slate-800">
+              <div className="w-10 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0 border-r border-[var(--bd2)]">
                 {tNum}
               </div>
               <div className="w-5 text-center font-bold select-none text-[11px] flex-shrink-0">
@@ -208,8 +208,8 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
   return (
     <div className="flex-1 flex overflow-hidden font-mono text-xs">
       {/* Left (Original) */}
-      <div className="w-1/2 h-full border-r border-slate-800 flex flex-col overflow-hidden">
-        <div className="px-3 py-1 bg-[#10121a] border-b border-slate-800 text-[11px] text-slate-400 font-semibold select-none">
+      <div className="w-1/2 h-full border-r border-[var(--bd2)] flex flex-col overflow-hidden">
+        <div className="px-3 py-1 bg-[var(--s3)] border-b border-[var(--bd2)] text-[11px] text-[var(--tx4)] font-semibold select-none">
           Original Base
         </div>
         <div className="flex-1 overflow-auto p-2">
@@ -222,13 +222,13 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                 key={i}
                 className={`flex items-start py-0.5 px-1 rounded ${
                   line === undefined
-                    ? 'bg-slate-900/40 text-slate-600'
+                    ? 'bg-[var(--bg-deep)] text-[var(--tx6)]'
                     : isDiff
                     ? 'bg-rose-950/25 text-rose-200'
-                    : 'text-slate-300 hover:bg-slate-800/30'
+                    : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                 }`}
               >
-                <span className="w-8 text-right pr-2 text-[10.5px] text-slate-600 select-none flex-shrink-0">
+                <span className="w-8 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0">
                   {line !== undefined ? i + 1 : ''}
                 </span>
                 <pre className="flex-1 whitespace-pre-wrap break-all text-[11.5px]">
@@ -242,7 +242,7 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
 
       {/* Right (Modified) */}
       <div className="w-1/2 h-full flex flex-col overflow-hidden">
-        <div className="px-3 py-1 bg-[#10121a] border-b border-slate-800 text-[11px] text-slate-400 font-semibold select-none">
+        <div className="px-3 py-1 bg-[var(--s3)] border-b border-[var(--bd2)] text-[11px] text-[var(--tx4)] font-semibold select-none">
           Modified Target
         </div>
         <div className="flex-1 overflow-auto p-2">
@@ -255,13 +255,13 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                 key={i}
                 className={`flex items-start py-0.5 px-1 rounded ${
                   line === undefined
-                    ? 'bg-slate-900/40 text-slate-600'
+                    ? 'bg-[var(--bg-deep)] text-[var(--tx6)]'
                     : isDiff
                     ? 'bg-emerald-950/25 text-emerald-200'
-                    : 'text-slate-300 hover:bg-slate-800/30'
+                    : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                 }`}
               >
-                <span className="w-8 text-right pr-2 text-[10.5px] text-slate-600 select-none flex-shrink-0">
+                <span className="w-8 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0">
                   {line !== undefined ? i + 1 : ''}
                 </span>
                 <pre className="flex-1 whitespace-pre-wrap break-all text-[11.5px]">

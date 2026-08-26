@@ -80,12 +80,12 @@ export const SplitLayout: React.FC<SplitLayoutProps> = ({
         onDoubleClick={() => setSidebarWidth(defaultSidebarWidth)}
         title="Drag to resize sidebar (Double-click to reset)"
         className={`w-1 h-full cursor-col-resize flex-shrink-0 transition-colors z-20 ${
-          isDragging ? 'bg-blue-500' : 'bg-slate-800/80 hover:bg-blue-500/60'
+          isDragging ? 'bg-blue-500' : 'bg-[var(--bd2)] hover:bg-blue-500/60'
         }`}
       />
 
       {/* Right Main Viewer */}
-      <div className="flex-1 h-full min-w-0 flex flex-col overflow-hidden bg-[#0a0b10]">
+      <div className="flex-1 h-full min-w-0 flex flex-col overflow-hidden bg-[var(--s1)]">
         {content}
       </div>
     </div>

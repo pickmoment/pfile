@@ -63,10 +63,10 @@ export const FileTree: React.FC = () => {
 
   if (!currentDirectory) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 text-center text-slate-500 h-full select-none">
-        <FolderSearch className="w-10 h-10 mb-3 text-slate-600 stroke-[1.5]" />
-        <p className="text-xs font-medium text-slate-400">No directory open</p>
-        <p className="text-[11px] text-slate-600 mt-1 max-w-[200px]">
+      <div className="flex flex-col items-center justify-center p-6 text-center text-[var(--tx5)] h-full select-none">
+        <FolderSearch className="w-10 h-10 mb-3 text-[var(--tx6)] stroke-[1.5]" />
+        <p className="text-xs font-medium text-[var(--tx4)]">No directory open</p>
+        <p className="text-[11px] text-[var(--tx6)] mt-1 max-w-[200px]">
           Click "Open Folder" above to explore your AI code & documents
         </p>
       </div>
@@ -75,7 +75,7 @@ export const FileTree: React.FC = () => {
 
   if (isLoading && files.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8 text-slate-500 gap-2">
+      <div className="flex items-center justify-center p-8 text-[var(--tx5)] gap-2">
         <Sparkles className="w-4 h-4 animate-spin text-blue-400" />
         <span className="text-xs">Loading directory...</span>
       </div>
@@ -85,7 +85,7 @@ export const FileTree: React.FC = () => {
   return (
     <div className="flex-1 overflow-y-auto px-1 py-1 space-y-0.5 no-scrollbar select-none">
       {filteredFiles.length === 0 ? (
-        <div className="p-6 text-center text-slate-500 text-xs">
+        <div className="p-6 text-center text-[var(--tx5)] text-xs">
           {searchQuery || categoryFilter !== 'ALL'
             ? 'No files matching current filter'
             : 'Directory is empty'}

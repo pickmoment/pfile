@@ -138,10 +138,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: adjustedX, top: adjustedY }}
-      className="fixed z-50 w-52 bg-[#181c28] border border-slate-700/80 rounded-xl shadow-2xl py-1 text-xs text-slate-200 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-700/50"
+      className="fixed z-50 w-52 bg-[var(--s6)] border border-[var(--bd1)] rounded-xl shadow-2xl py-1 text-xs text-[var(--tx2)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 divide-y divide-[var(--bd1)]"
     >
       {/* File info label */}
-      <div className="px-3 py-1.5 text-[11px] font-medium text-slate-400 truncate">
+      <div className="px-3 py-1.5 text-[11px] font-medium text-[var(--tx4)] truncate">
         {file.name}
       </div>
 
@@ -151,14 +151,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           onClick={handleCopyPath}
           className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-300 text-left transition-colors"
         >
-          <Link className="w-3.5 h-3.5 text-slate-400" />
+          <Link className="w-3.5 h-3.5 text-[var(--tx4)]" />
           <span>Copy Absolute Path</span>
         </button>
         <button
           onClick={handleCopyRelativePath}
           className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-300 text-left transition-colors"
         >
-          <Copy className="w-3.5 h-3.5 text-slate-400" />
+          <Copy className="w-3.5 h-3.5 text-[var(--tx4)]" />
           <span>Copy Relative Path</span>
         </button>
       </div>
@@ -167,40 +167,38 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <div className="py-1">
         <button
           onClick={handleShowInExplorer}
-          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-slate-700/50 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--s7)] text-left transition-colors"
         >
           <FolderSearch className="w-3.5 h-3.5 text-amber-400" />
           <span>Show in File Manager</span>
         </button>
         <button
           onClick={handleOpenInDefaultApp}
-          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-slate-700/50 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--s7)] text-left transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
           <span>Open with Default App</span>
         </button>
-        {file.is_dir && (
-          <button
-            onClick={() => {
-              if (isFavorite) removeFavorite(file.path);
-              else addFavorite(file.path);
-              onClose();
-            }}
-            className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-slate-700/50 text-left transition-colors"
-          >
-            {isFavorite ? (
-              <>
-                <StarOff className="w-3.5 h-3.5 text-amber-400" />
-                <span>Remove from Favorites</span>
-              </>
-            ) : (
-              <>
-                <Star className="w-3.5 h-3.5 text-amber-400" />
-                <span>Pin to Favorites</span>
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={() => {
+            if (isFavorite) removeFavorite(file.path);
+            else addFavorite(file.path);
+            onClose();
+          }}
+          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--s7)] text-left transition-colors"
+        >
+          {isFavorite ? (
+            <>
+              <StarOff className="w-3.5 h-3.5 text-amber-400" />
+              <span>Remove from Favorites</span>
+            </>
+          ) : (
+            <>
+              <Star className="w-3.5 h-3.5 text-amber-400" />
+              <span>Pin to Favorites</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Clipboard & Editing actions */}
@@ -211,13 +209,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             showToast('Copied', `"${file.name}" copied`, 'info');
             onClose();
           }}
-          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-slate-700/50 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-[var(--s7)] text-left transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Copy className="w-3.5 h-3.5 text-slate-400" />
+            <Copy className="w-3.5 h-3.5 text-[var(--tx4)]" />
             <span>Copy</span>
           </span>
-          <span className="text-[10px] text-slate-500 font-mono">Ctrl+C</span>
+          <span className="text-[10px] text-[var(--tx5)] font-mono">Ctrl+C</span>
         </button>
         <button
           onClick={() => {
@@ -225,24 +223,24 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             showToast('Cut', `"${file.name}" cut`, 'info');
             onClose();
           }}
-          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-slate-700/50 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-[var(--s7)] text-left transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Scissors className="w-3.5 h-3.5 text-slate-400" />
+            <Scissors className="w-3.5 h-3.5 text-[var(--tx4)]" />
             <span>Cut</span>
           </span>
-          <span className="text-[10px] text-slate-500 font-mono">Ctrl+X</span>
+          <span className="text-[10px] text-[var(--tx5)] font-mono">Ctrl+X</span>
         </button>
         {clipboard && (
           <button
             onClick={handlePaste}
-            className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-slate-700/50 text-left transition-colors"
+            className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-[var(--s7)] text-left transition-colors"
           >
             <span className="flex items-center gap-2">
-              <Clipboard className="w-3.5 h-3.5 text-slate-400" />
+              <Clipboard className="w-3.5 h-3.5 text-[var(--tx4)]" />
               <span>Paste</span>
             </span>
-            <span className="text-[10px] text-slate-500 font-mono">Ctrl+V</span>
+            <span className="text-[10px] text-[var(--tx5)] font-mono">Ctrl+V</span>
           </button>
         )}
         <button
@@ -250,13 +248,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             onClose();
             onRename(file);
           }}
-          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-slate-700/50 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-[var(--s7)] text-left transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Edit2 className="w-3.5 h-3.5 text-slate-400" />
+            <Edit2 className="w-3.5 h-3.5 text-[var(--tx4)]" />
             <span>Rename</span>
           </span>
-          <span className="text-[10px] text-slate-500 font-mono">F2</span>
+          <span className="text-[10px] text-[var(--tx5)] font-mono">F2</span>
         </button>
       </div>
 

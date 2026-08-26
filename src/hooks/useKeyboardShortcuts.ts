@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFileStore } from '../store/useFileStore';
 import { useClipboardStore } from '../store/useClipboardStore';
+import { useViewerStore } from '../store/useViewerStore';
 import { useToastStore } from '../store/useToastStore';
 
 interface ShortcutOptions {
@@ -29,6 +30,8 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
   const clearClipboard = useClipboardStore((s) => s.clear);
 
   const showToast = useToastStore((s) => s.showToast);
+  const contentOnly = useViewerStore((s) => s.contentOnly);
+  const toggleContentOnly = useViewerStore((s) => s.toggleContentOnly);
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -38,6 +41,20 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable ||
         target.closest('.monaco-editor');
+
+      // Escape: Exit content-only mode
+      if (e.key === 'Escape' && contentOnly) {
+        e.preventDefault();
+        toggleContentOnly();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + F: Toggle content-only mode
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        toggleContentOnly();
+        return;
+      }
 
       // Ctrl/Cmd + P or Ctrl/Cmd + K: Quick Jump Command Palette
       if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P' || e.key === 'k' || e.key === 'K')) {
@@ -186,6 +203,8 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
     goBack,
     goForward,
     goUp,
+    contentOnly,
+    toggleContentOnly,
     options,
   ]);
 }

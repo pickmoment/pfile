@@ -66,16 +66,16 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0b0c12] overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[var(--s1)] overflow-hidden">
       {/* Sandbox Toolbar */}
-      <div className="h-9 bg-[#12141d] border-b border-slate-800/80 px-3 flex items-center justify-between text-xs text-slate-300 select-none">
+      <div className="h-9 bg-[var(--s4)] border-b border-[var(--bd2)] px-3 flex items-center justify-between text-xs text-[var(--tx3)] select-none">
         {/* Left: Device Viewport Switcher */}
-        <div className="flex items-center gap-1 bg-[#0a0b10] p-0.5 rounded-lg border border-slate-800">
+        <div className="flex items-center gap-1 bg-[var(--s1)] p-0.5 rounded-lg border border-[var(--bd2)]">
           <button
             onClick={() => setViewportSize('desktop')}
             title="Desktop (100%)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'desktop' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              viewportSize === 'desktop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
             }`}
           >
             <Monitor className="w-3 h-3" />
@@ -85,7 +85,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('laptop')}
             title="Laptop (1024px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'laptop' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              viewportSize === 'laptop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
             }`}
           >
             <Laptop className="w-3 h-3" />
@@ -95,7 +95,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('tablet')}
             title="Tablet (768px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'tablet' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              viewportSize === 'tablet' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
             }`}
           >
             <Tablet className="w-3 h-3" />
@@ -105,7 +105,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('mobile')}
             title="Mobile (375px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'mobile' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              viewportSize === 'mobile' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
             }`}
           >
             <Smartphone className="w-3 h-3" />
@@ -118,7 +118,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
           <button
             onClick={handleRefresh}
             title="Reload Sandbox Frame"
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white transition-colors"
           >
             <RotateCw className="w-3.5 h-3.5" />
           </button>
@@ -127,7 +127,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition-colors border ${
               showConsole
                 ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-200'
-                : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-white'
+                : 'bg-[var(--bg-muted)] border-[var(--bd1)] text-[var(--tx3)] hover:text-white'
             }`}
           >
             <Terminal className="w-3 h-3 text-indigo-400" />
@@ -138,10 +138,10 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
       </div>
 
       {/* Frame Container */}
-      <div className="flex-1 w-full h-full bg-[#181a24] p-3 flex justify-center items-stretch overflow-auto">
+      <div className="flex-1 w-full h-full bg-[var(--s6)] p-3 flex justify-center items-stretch overflow-auto">
         <div
           style={{ width: VIEWPORT_WIDTHS[viewportSize] }}
-          className="h-full bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-200 border border-slate-700/40 relative"
+          className="h-full bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-200 border border-[var(--bd1)] relative"
         >
           <iframe
             key={key}
@@ -156,20 +156,20 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
 
       {/* Console Bottom Bar */}
       {showConsole && (
-        <div className="h-44 bg-[#0a0b10] border-t border-slate-800 flex flex-col font-mono text-xs select-text">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-[#12141d] border-b border-slate-800 text-slate-400">
+        <div className="h-44 bg-[var(--s1)] border-t border-[var(--bd2)] flex flex-col font-mono text-xs select-text">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--s4)] border-b border-[var(--bd2)] text-[var(--tx4)]">
             <span className="font-semibold text-[11px] uppercase tracking-wider">Iframe Logs</span>
             <button
               onClick={() => setConsoleLogs([])}
               title="Clear Logs"
-              className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-rose-400"
+              className="p-1 rounded hover:bg-[var(--s7)] text-[var(--tx4)] hover:text-rose-400"
             >
               <Trash2 className="w-3 h-3" />
             </button>
           </div>
           <div className="flex-1 p-2 overflow-y-auto space-y-1">
             {consoleLogs.length === 0 ? (
-              <div className="text-slate-600 italic text-[11px] p-2">No console output recorded</div>
+              <div className="text-[var(--tx6)] italic text-[11px] p-2">No console output recorded</div>
             ) : (
               consoleLogs.map((log) => (
                 <div
@@ -179,10 +179,10 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
                       ? 'text-rose-400 bg-rose-950/20 px-1 rounded'
                       : log.type === 'warn'
                       ? 'text-amber-400'
-                      : 'text-slate-300'
+                      : 'text-[var(--tx3)]'
                   }`}
                 >
-                  <span className="text-slate-600 flex-shrink-0">[{log.time}]</span>
+                  <span className="text-[var(--tx6)] flex-shrink-0">[{log.time}]</span>
                   <span className="font-semibold uppercase text-[10px] flex-shrink-0">
                     [{log.type}]
                   </span>

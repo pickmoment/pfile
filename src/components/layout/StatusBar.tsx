@@ -9,12 +9,12 @@ export const StatusBar: React.FC = () => {
   const files = useFileStore((s) => s.files);
 
   return (
-    <footer className="h-6 bg-[#0f1118] border-t border-slate-800/80 px-3 flex items-center justify-between text-[11px] text-slate-400 font-mono select-none">
+    <footer className="h-6 bg-[var(--s3)] border-t border-[var(--bd2)] px-3 flex items-center justify-between text-[11px] text-[var(--tx4)] font-mono select-none">
       {/* Left: Watcher Status */}
       <div className="flex items-center gap-3">
         <div
           title="Real-time file changes are automatically watched and updated"
-          className="flex items-center gap-1.5 text-slate-300"
+          className="flex items-center gap-1.5 text-[var(--tx3)]"
         >
           {watcherActive ? (
             <>
@@ -26,21 +26,21 @@ export const StatusBar: React.FC = () => {
             </>
           ) : (
             <>
-              <Radio className="w-3 h-3 text-slate-500" />
-              <span className="text-slate-500">Watcher Idle</span>
+              <Radio className="w-3 h-3 text-[var(--tx5)]" />
+              <span className="text-[var(--tx5)]">Watcher Idle</span>
             </>
           )}
         </div>
 
-        <span className="text-slate-700">|</span>
+        <span className="text-[var(--tx7)]">|</span>
 
         {/* Selected / Directory Info */}
-        <div className="flex items-center gap-1 text-slate-400">
+        <div className="flex items-center gap-1 text-[var(--tx4)]">
           {selectedFile ? (
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3 text-sky-400" />
-              <span className="text-slate-200">{selectedFile.name}</span>
-              <span className="text-slate-500">({formatBytes(selectedFile.size)})</span>
+              <span className="text-[var(--tx2)]">{selectedFile.name}</span>
+              <span className="text-[var(--tx5)]">({formatBytes(selectedFile.size)})</span>
             </span>
           ) : (
             <span>{files.length} items</span>
@@ -49,19 +49,20 @@ export const StatusBar: React.FC = () => {
       </div>
 
       {/* Center: Keyboard Shortcuts Mini Hint */}
-      <div className="hidden lg:flex items-center gap-3 text-[10.5px] text-slate-500">
-        <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-300">Ctrl+P</kbd> Quick Jump</span>
-        <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-300">Ctrl+L</kbd> Path</span>
-        <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-300">F2</kbd> Rename</span>
-        <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-300">Del</kbd> Delete</span>
-        <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-300">Ctrl+F</kbd> Search</span>
+      <div className="hidden lg:flex items-center gap-3 text-[10.5px] text-[var(--tx5)]">
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+P</kbd> Quick Jump</span>
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+L</kbd> Path</span>
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">F2</kbd> Rename</span>
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Del</kbd> Delete</span>
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+F</kbd> Search</span>
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+⇧+F</kbd> Focus</span>
       </div>
 
       {/* Right: Encoding and Format */}
       <div className="flex items-center gap-3">
-        <span className="text-slate-400">UTF-8</span>
-        <span className="text-slate-700">|</span>
-        <span className="flex items-center gap-1 text-slate-400">
+        <span className="text-[var(--tx4)]">UTF-8</span>
+        <span className="text-[var(--tx7)]">|</span>
+        <span className="flex items-center gap-1 text-[var(--tx4)]">
           <CheckCircle className="w-3 h-3 text-blue-400" />
           <span>LF / CRLF</span>
         </span>

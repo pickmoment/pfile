@@ -67,11 +67,11 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
 
   if (parseError) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#0b0c12] p-8">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--s1)] p-8">
         <div className="p-4 bg-amber-950/30 border border-amber-800/50 rounded-xl text-xs text-amber-300 max-w-md text-center space-y-2">
           <AlertTriangle className="w-6 h-6 mx-auto text-amber-400" />
           <p className="font-semibold text-amber-200">Unable to preview Excel spreadsheet</p>
-          <p className="font-mono text-[11px] text-slate-400">{parseError}</p>
+          <p className="font-mono text-[11px] text-[var(--tx4)]">{parseError}</p>
         </div>
       </div>
     );
@@ -79,19 +79,19 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
 
   if (!workbook) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0b0c12] text-xs text-slate-500 font-mono">
+      <div className="w-full h-full flex items-center justify-center bg-[var(--s1)] text-xs text-[var(--tx5)] font-mono">
         Loading spreadsheet data...
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0c0d14] overflow-hidden select-text">
+    <div className="w-full h-full flex flex-col bg-[var(--s2)] overflow-hidden select-text">
       {/* Top Toolbar */}
-      <div className="h-9 bg-[#12141d] border-b border-slate-800 px-3 flex items-center justify-between gap-3 text-xs select-none">
-        <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+      <div className="h-9 bg-[var(--s4)] border-b border-[var(--bd2)] px-3 flex items-center justify-between gap-3 text-xs select-none">
+        <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--tx4)]">
           <Table className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-slate-200 font-semibold">{sheetRows.length} rows</span>
+          <span className="text-[var(--tx2)] font-semibold">{sheetRows.length} rows</span>
           <span>•</span>
           <span>{maxCols} cols</span>
           <span>•</span>
@@ -99,42 +99,42 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
         </div>
 
         <div className="relative w-60">
-          <Search className="w-3 h-3 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3 h-3 text-[var(--tx5)] absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search spreadsheet..."
-            className="w-full pl-7 pr-2 py-1 text-xs bg-[#090a0f] border border-slate-800 rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
+            className="w-full pl-7 pr-2 py-1 text-xs bg-[var(--s0)] border border-[var(--bd2)] rounded text-[var(--tx2)] placeholder-[var(--tx5)] focus:outline-none focus:border-blue-500 font-mono"
           />
         </div>
       </div>
 
       {/* Spreadsheet Grid Container */}
-      <div className="flex-1 overflow-auto bg-[#090a0f]">
+      <div className="flex-1 overflow-auto bg-[var(--s0)]">
         <table className="w-full text-left border-collapse text-xs font-mono">
-          <thead className="bg-[#141724] sticky top-0 z-10 border-b border-slate-700">
+          <thead className="bg-[var(--s5)] sticky top-0 z-10 border-b border-[var(--bd1)]">
             <tr>
               {/* Top-left empty cell */}
-              <th className="p-1.5 text-[10px] text-slate-500 font-semibold w-12 text-center bg-[#10121b] border-r border-b border-slate-800">
+              <th className="p-1.5 text-[10px] text-[var(--tx5)] font-semibold w-12 text-center bg-[var(--s3)] border-r border-b border-[var(--bd2)]">
                 #
               </th>
               {/* Column header letters A, B, C ... */}
               {Array.from({ length: maxCols }).map((_, cIdx) => (
                 <th
                   key={cIdx}
-                  className="p-1.5 text-[10.5px] text-slate-400 font-semibold text-center min-w-[100px] border-r border-b border-slate-800 bg-[#141724]"
+                  className="p-1.5 text-[10.5px] text-[var(--tx4)] font-semibold text-center min-w-[100px] border-r border-b border-[var(--bd2)] bg-[var(--s5)]"
                 >
                   {getColLetter(cIdx)}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-[var(--bd2)]">
             {filteredRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-slate-800/40 transition-colors">
+              <tr key={rIdx} className="hover:bg-[var(--s7)] transition-colors">
                 {/* Row number header 1, 2, 3 ... */}
-                <td className="p-1.5 text-[10px] text-slate-600 font-semibold text-center bg-[#10121b] border-r border-slate-800 select-none">
+                <td className="p-1.5 text-[10px] text-[var(--tx6)] font-semibold text-center bg-[var(--s3)] border-r border-[var(--bd2)] select-none">
                   {rIdx + 1}
                 </td>
                 {/* Cells */}
@@ -144,7 +144,7 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
                   return (
                     <td
                       key={cIdx}
-                      className="p-2 text-slate-300 border-r border-slate-800/60 max-w-sm truncate whitespace-nowrap"
+                      className="p-2 text-[var(--tx3)] border-r border-[var(--bd2)] max-w-sm truncate whitespace-nowrap"
                     >
                       {strVal}
                     </td>
@@ -158,7 +158,7 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
 
       {/* Sheet Tabs Bar */}
       {workbook.SheetNames.length > 0 && (
-        <div className="h-8 bg-[#11131c] border-t border-slate-800 px-2 flex items-center gap-1 overflow-x-auto select-none">
+        <div className="h-8 bg-[var(--s4)] border-t border-[var(--bd2)] px-2 flex items-center gap-1 overflow-x-auto select-none">
           {workbook.SheetNames.map((name) => {
             const isActive = activeSheetName === name;
             return (
@@ -167,8 +167,8 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
                 onClick={() => setActiveSheetName(name)}
                 className={`flex items-center gap-1 px-3 py-1 text-xs font-mono rounded-t transition-colors border-t-2 ${
                   isActive
-                    ? 'bg-[#181c28] text-emerald-400 border-emerald-500 font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/50'
+                    ? 'bg-[var(--s6)] text-emerald-400 border-emerald-500 font-semibold'
+                    : 'text-[var(--tx4)] hover:text-[var(--tx2)] border-transparent hover:bg-[var(--s7)]'
                 }`}
               >
                 <Sheet className="w-3 h-3" />

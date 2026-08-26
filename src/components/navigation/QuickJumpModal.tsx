@@ -33,9 +33,9 @@ export const QuickJumpModal: React.FC = () => {
   const [results, setResults] = useState<FileMetadata[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
-
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const searchGenRef = useRef(0);
 
   useEffect(() => {
     if (isQuickJumpOpen) {
@@ -52,7 +52,8 @@ export const QuickJumpModal: React.FC = () => {
   useEffect(() => {
     if (!isQuickJumpOpen) return;
 
-    let isMounted = true;
+    const gen = ++searchGenRef.current;
+
     const executeSearch = async () => {
       const trimmed = query.trim();
       if (!trimmed) {
@@ -70,20 +71,19 @@ export const QuickJumpModal: React.FC = () => {
           maxResults: 30,
           includeHidden: showHiddenFiles,
         });
-        if (isMounted) {
-          setResults(matches);
-          setSelectedIndex(0);
-        }
+        // Discard if a newer search was fired while this one was in flight
+        if (searchGenRef.current !== gen) return;
+        setResults(matches);
+        setSelectedIndex(0);
       } catch (err) {
         console.warn('Search failed:', err);
       } finally {
-        if (isMounted) setIsSearching(false);
+        if (searchGenRef.current === gen) setIsSearching(false);
       }
     };
 
-    const timer = setTimeout(executeSearch, 120);
+    const timer = setTimeout(executeSearch, 300);
     return () => {
-      isMounted = false;
       clearTimeout(timer);
     };
   }, [query, currentDirectory, isQuickJumpOpen]);
@@ -184,7 +184,7 @@ export const QuickJumpModal: React.FC = () => {
       case 'drive':
         return <HardDrive className="w-4 h-4 text-amber-400" />;
       default:
-        return <Folder className="w-4 h-4 text-slate-400" />;
+        return <Folder className="w-4 h-4 text-[var(--tx4)]" />;
     }
   };
 
@@ -193,12 +193,12 @@ export const QuickJumpModal: React.FC = () => {
       onClick={(e) => {
         if (e.target === e.currentTarget) setQuickJumpOpen(false);
       }}
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/70 backdrop-blur-sm p-4 select-none animate-in fade-in duration-100"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-[var(--overlay)] backdrop-blur-sm p-4 select-none animate-in fade-in duration-100"
     >
-      <div className="w-full max-w-xl bg-[#141724] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col divide-y divide-slate-800">
+      <div className="w-full max-w-xl bg-[var(--s5)] border border-[var(--bd1)] rounded-2xl shadow-2xl overflow-hidden flex flex-col divide-y divide-[var(--bd2)]">
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#10121b]">
-          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 bg-[var(--s3)]">
+          <Search className="w-4 h-4 text-[var(--tx4)] flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -206,12 +206,16 @@ export const QuickJumpModal: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Quick Jump: type file name or path... (Ctrl+P)"
-            className="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-mono"
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
+            className="flex-1 bg-transparent text-sm text-[var(--tx1)] placeholder-[var(--tx5)] focus:outline-none font-mono"
           />
           {isSearching ? (
             <Sparkles className="w-4 h-4 animate-spin text-blue-400" />
           ) : (
-            <span className="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded font-mono">
+            <span className="text-[10px] bg-[var(--bg-muted)] border border-[var(--bd1)] text-[var(--tx4)] px-1.5 py-0.5 rounded font-mono">
               ESC to close
             </span>
           )}
@@ -221,7 +225,7 @@ export const QuickJumpModal: React.FC = () => {
         <div ref={listRef} className="max-h-96 overflow-y-auto p-2 space-y-1">
           {query.trim() ? (
             results.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500">
+              <div className="p-8 text-center text-xs text-[var(--tx5)]">
                 {isSearching ? 'Searching files in workspace...' : `No matching files found for "${query}"`}
               </div>
             ) : (
@@ -239,22 +243,24 @@ export const QuickJumpModal: React.FC = () => {
                       setSelectedIndex(idx);
                       handleSelectCurrent();
                     }}
-                    onMouseEnter={() => setSelectedIndex(idx)}
+                    onMouseMove={() => {
+                      if (selectedIndex !== idx) setSelectedIndex(idx);
+                    }}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-colors text-xs font-mono ${
                       isSelected
                         ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
-                        : 'text-slate-300 hover:bg-slate-800/50'
+                        : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {getFileIcon(item.category, item.extension, item.is_dir, false, 'w-4 h-4')}
                       <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-slate-100 truncate">{item.name}</span>
-                        <span className="text-[10.5px] text-slate-500 truncate">{relPath}</span>
+                        <span className="font-semibold text-[var(--tx1)] truncate">{item.name}</span>
+                        <span className="text-[10.5px] text-[var(--tx5)] truncate">{relPath}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2 flex-shrink-0 text-[11px] text-[var(--tx5)]">
                       {!item.is_dir && <span>{formatBytes(item.size)}</span>}
                       <ArrowRight className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-400' : 'opacity-0'}`} />
                     </div>
@@ -267,7 +273,7 @@ export const QuickJumpModal: React.FC = () => {
             <div className="space-y-3 p-1">
               {/* Quick Locations */}
               <div>
-                <div className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <div className="px-2 py-1 text-[10px] font-bold text-[var(--tx5)] uppercase tracking-wider">
                   Quick Access Places
                 </div>
                 <div className="grid grid-cols-2 gap-1 mt-1">
@@ -280,11 +286,11 @@ export const QuickJumpModal: React.FC = () => {
                           jumpToPath(item.path);
                           setQuickJumpOpen(false);
                         }}
-                        onMouseEnter={() => setSelectedIndex(idx)}
+                        onMouseMove={() => { if (selectedIndex !== idx) setSelectedIndex(idx); }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-colors text-xs font-mono ${
                           isSelected
                             ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
-                            : 'bg-[#0f111a] hover:bg-slate-800/60 text-slate-200'
+                            : 'bg-[var(--s3)] hover:bg-[var(--s7)] text-[var(--tx2)]'
                         }`}
                       >
                         {renderQuickPathIcon(item.kind)}
@@ -298,7 +304,7 @@ export const QuickJumpModal: React.FC = () => {
               {/* Recent Directories */}
               {recentDirectories.length > 0 && (
                 <div>
-                  <div className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <div className="px-2 py-1 text-[10px] font-bold text-[var(--tx5)] uppercase tracking-wider flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     <span>Recent Workspaces</span>
                   </div>
@@ -315,17 +321,17 @@ export const QuickJumpModal: React.FC = () => {
                             jumpToPath(dirPath);
                             setQuickJumpOpen(false);
                           }}
-                          onMouseEnter={() => setSelectedIndex(absoluteIndex)}
+                          onMouseMove={() => { if (selectedIndex !== absoluteIndex) setSelectedIndex(absoluteIndex); }}
                           className={`flex items-center justify-between px-3 py-1.5 rounded-lg cursor-pointer transition-colors text-xs font-mono ${
                             isSelected
                               ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
-                              : 'text-slate-300 hover:bg-slate-800/50'
+                              : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <Folder className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                            <span className="font-medium text-slate-200">{folderName}</span>
-                            <span className="text-[10px] text-slate-500 truncate max-w-xs">
+                            <span className="font-medium text-[var(--tx2)]">{folderName}</span>
+                            <span className="text-[10px] text-[var(--tx5)] truncate max-w-xs">
                               {dirPath}
                             </span>
                           </div>
@@ -341,10 +347,10 @@ export const QuickJumpModal: React.FC = () => {
         </div>
 
         {/* Footer Hint */}
-        <div className="px-4 py-2 bg-[#0d0e17] flex items-center justify-between text-[11px] text-slate-500 font-mono">
+        <div className="px-4 py-2 bg-[var(--s2)] flex items-center justify-between text-[11px] text-[var(--tx5)] font-mono">
           <div className="flex items-center gap-3">
-            <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-400">↑↓</kbd> Navigate</span>
-            <span><kbd className="bg-slate-800 px-1 py-0.2 rounded text-slate-400">↵</kbd> Select</span>
+            <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx4)]">↑↓</kbd> Navigate</span>
+            <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx4)]">↵</kbd> Select</span>
           </div>
           <span>Deep Workspace Search</span>
         </div>

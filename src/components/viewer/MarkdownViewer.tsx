@@ -66,7 +66,7 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
   return (
     <div
       ref={containerRef}
-      className="my-4 p-4 bg-[#11131c] border border-slate-800 rounded-xl overflow-x-auto flex justify-center items-center shadow-inner"
+      className="my-4 p-4 bg-[var(--s4)] border border-[var(--bd2)] rounded-xl overflow-x-auto flex justify-center items-center shadow-inner"
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
@@ -92,18 +92,18 @@ const CodeBlock: React.FC<{
   }
 
   return (
-    <div className="relative group my-3 rounded-lg overflow-hidden border border-slate-800 bg-[#0d0f15]">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#141722] border-b border-slate-800 text-[11px] text-slate-400 font-mono">
+    <div className="relative group my-3 rounded-lg overflow-hidden border border-[var(--bd2)] bg-[var(--s2)]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--s5)] border-b border-[var(--bd2)] text-[11px] text-[var(--tx4)] font-mono">
         <span>{language || 'text'}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-slate-400 hover:text-white px-2 py-0.5 rounded hover:bg-slate-700/50 transition-colors"
+          className="flex items-center gap-1 text-[var(--tx4)] hover:text-white px-2 py-0.5 rounded hover:bg-[var(--s7)] transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
-      <pre className="p-3.5 text-xs text-slate-200 font-mono overflow-x-auto leading-relaxed">
+      <pre className="p-3.5 text-xs text-[var(--tx2)] font-mono overflow-x-auto leading-relaxed">
         <code>{value}</code>
       </pre>
     </div>
@@ -154,12 +154,12 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const isSource = viewerMode === 'source' || isEditing;
 
   return (
-    <div className="relative w-full h-full flex overflow-hidden bg-[#0c0d14]">
+    <div className="relative w-full h-full flex overflow-hidden bg-[var(--s2)]">
       {/* Main Content Area: Render / Source / Split */}
       <div className="flex-1 flex overflow-hidden">
         {/* Source View (Monaco) */}
         {(isSource || isSplit) && (
-          <div className={`${isSplit ? 'w-1/2 border-r border-slate-800' : 'w-full'} h-full`}>
+          <div className={`${isSplit ? 'w-1/2 border-r border-[var(--bd2)]' : 'w-full'} h-full`}>
             <Editor
               height="100%"
               defaultLanguage="markdown"
@@ -183,7 +183,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         {/* Rendered View */}
         {(!isSource || isSplit) && (
           <div className={`${isSplit ? 'w-1/2' : 'w-full'} h-full overflow-y-auto p-8 relative scroll-smooth`}>
-            <article className="max-w-3xl mx-auto prose prose-invert prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-slate-300 prose-p:leading-relaxed prose-code:font-mono prose-code:text-sky-300 prose-code:bg-slate-800/60 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-slate-700 prose-th:p-2 prose-td:border prose-td:border-slate-800 prose-td:p-2">
+            <article className="max-w-3xl mx-auto prose prose-invert prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-code:font-mono prose-code:text-sky-300 prose-code:bg-[var(--bg-muted)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -191,24 +191,24 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                   h1: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h1 id={id} className="scroll-mt-6 text-2xl font-bold text-slate-100 border-b border-slate-800 pb-2 mb-4 mt-6">{children}</h1>;
+                    return <h1 id={id} className="scroll-mt-6 text-2xl font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-2 mb-4 mt-6">{children}</h1>;
                   },
                   h2: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h2 id={id} className="scroll-mt-6 text-xl font-bold text-slate-100 border-b border-slate-800/60 pb-1 mb-3 mt-6">{children}</h2>;
+                    return <h2 id={id} className="scroll-mt-6 text-xl font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-1 mb-3 mt-6">{children}</h2>;
                   },
                   h3: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h3 id={id} className="scroll-mt-6 text-lg font-semibold text-slate-200 mb-2 mt-4">{children}</h3>;
+                    return <h3 id={id} className="scroll-mt-6 text-lg font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h3>;
                   },
                   code: ({ node: _node, className, children, ...props }) => {
                     const match = /language-(\w+)/.exec(className || '');
                     const isInline = !match && !String(children).includes('\n');
                     if (isInline) {
                       return (
-                        <code className="bg-slate-800/80 text-sky-300 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                        <code className="bg-[var(--bg-muted)] text-sky-300 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
                           {children}
                         </code>
                       );
@@ -234,7 +234,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         <button
           onClick={toggleToc}
           title="Toggle Table of Contents"
-          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-[#181c28]/90 hover:bg-[#202538] border border-slate-700 text-slate-300 hover:text-white shadow-xl backdrop-blur-md transition-all"
+          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-[var(--s6)]/90 hover:bg-[var(--s7)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white shadow-xl backdrop-blur-md transition-all"
         >
           <ListTree className="w-4 h-4 text-indigo-400" />
         </button>
@@ -242,10 +242,10 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
 
       {/* TOC Drawer */}
       {headings.length > 0 && showToc && !isSource && (
-        <aside className="w-64 h-full border-l border-slate-800/80 bg-[#10121a]/95 backdrop-blur-sm p-4 overflow-y-auto select-none flex-shrink-0">
-          <div className="flex items-center justify-between mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <aside className="w-64 h-full border-l border-[var(--bd2)] bg-[var(--s3)]/95 backdrop-blur-sm p-4 overflow-y-auto select-none flex-shrink-0">
+          <div className="flex items-center justify-between mb-3 text-xs font-semibold text-[var(--tx4)] uppercase tracking-wider">
             <span>Table of Contents</span>
-            <span className="text-[10px] text-slate-500 font-mono">{headings.length} items</span>
+            <span className="text-[10px] text-[var(--tx5)] font-mono">{headings.length} items</span>
           </div>
 
           <nav className="space-y-1">
@@ -257,11 +257,11 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                 className={`w-full text-left py-1 text-xs rounded transition-colors flex items-center gap-1.5 truncate ${
                   activeHeadingId === h.id
                     ? 'text-blue-400 font-medium bg-blue-500/10'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    : 'text-[var(--tx4)] hover:text-[var(--tx2)] hover:bg-[var(--s7)]'
                 }`}
                 title={h.text}
               >
-                <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 text-slate-600" />
+                <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 text-[var(--tx6)]" />
                 <span className="truncate">{h.text}</span>
               </button>
             ))}
