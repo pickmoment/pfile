@@ -2,7 +2,7 @@
 
 AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 **Rust + Tauri v2 + React 19** 기반의 초고속 데스크톱 파일 탐색 및 리치 프리뷰어입니다.
 
-방대한 양의 마크다운 문서, 코드 스니펫, 인터랙티브 HTML 프로토타입, 데이터(JSON/CSV), 미디어(SVG/이미지/오디오/비디오)를 직관적으로 탐색·관리하고, **내장 Git 소스 컨트롤**, 네이티브 BPE 토큰 수 측정과 원클릭 AI 프롬프트 복사 및 실시간 변경 감지(Hot-reload)를 지원합니다.
+방대한 양의 마크다운 문서, 코드 스니펫, 인터랙티브 HTML 프로토타입, 데이터(JSON/CSV), 미디어(SVG/이미지/오디오/비디오), **압축 파일(ZIP/TAR/GZ)**을 직관적으로 탐색·관리하고, **내장 Git 소스 컨트롤**, 네이티브 BPE 토큰 수 측정과 원클릭 AI 프롬프트 복사 및 실시간 변경 감지(Hot-reload)를 지원합니다.
 
 ---
 
@@ -40,6 +40,13 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
   - 두 파일 간 실시간 변경점 비교.
   - **Side-by-Side (2열)** 및 **Unified Inline (단일 열)** 모드 지원.
   - 추가(+)/삭제(-) 라인 하이라이트 및 변경 통계 수치 제공.
+
+- **📦 Archive Viewer (압축 파일 미리보기)**:
+  - ZIP, JAR, WAR, APK, WHL, TAR, TAR.GZ, TAR.BZ2, TAR.XZ 등 주요 압축 포맷 지원.
+  - **트리형 파일 목록**: 폴더 구조 접기/펼치기, 파일 크기 및 압축률 표시.
+  - **검색 필터**: 압축 내부 파일명 실시간 필터링.
+  - **개별 파일 미리보기**: 텍스트 파일 즉시 미리보기 (2MB 제한).
+  - **전체 추출 (Extract All)**: 지정 폴더에 압축 해제.
 
 ### 3. 🔀 내장 Git 소스 컨트롤
 - **`git2` (libgit2) 기반 네이티브 Git 통합**: 외부 `git` CLI 의존 없이 Rust 내장 라이브러리로 동작.
@@ -95,11 +102,12 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
 - **`trash`**: OS 안전 휴지통 삭제
 - **`open`**: 시스템 기본 프로그램 실행
 - **`git2`**: libgit2 기반 네이티브 Git 통합 (상태, 스테이징, 커밋, 디프, 로그)
+- **`zip`**, **`tar`**, **`flate2`**, **`bzip2`**, **`xz2`**: 압축 파일 읽기 및 추출
 - **`serde` / `serde_json`**: 직렬화 및 IPC 통신
 
 ### Frontend (React 19 & Vite)
 - **React 19**, **TypeScript 5.9**, **Vite 6**
-- **Tailwind CSS 3.4**: 모던 다크 테마 및 반응형 레이아웃
+- **Tailwind CSS 3.4**: 다크/라이트 테마 전환 및 반응형 레이아웃
 - **`zustand`**: 파일 트리, 뷰어 상태, 클립보드, 토스트, Git 상태 전역 관리
 - **`@monaco-editor/react`**: VS Code 엔진 기반 코드 뷰어/에디터
 - **`react-markdown`**, **`remark-gfm`**, **`remark-math`**, **`rehype-katex`**, **`rehype-raw`**: 마크다운 렌더링
@@ -127,11 +135,12 @@ pfile/
 │           ├── tokens.rs      # tiktoken-rs 기반 토큰 및 통계 계산
 │           ├── watcher.rs     # notify 기반 실시간 파일 감시
 │           ├── system.rs      # 탐색기 열기, 기본 앱 실행
-│           └── git.rs         # git2 기반 Git 상태, 스테이징, 커밋, 디프, 로그
+│           ├── git.rs         # git2 기반 Git 상태, 스테이징, 커밋, 디프, 로그
+│           └── archive.rs     # 압축 파일 읽기, 개별 추출, 전체 추출
 ├── src/                       # React 19 프론트엔드
 │   ├── main.tsx
 │   ├── App.tsx                # 레이아웃 통합 및 훅 바인딩
-│   ├── index.css              # 다크 테마 및 타이포그래피
+│   ├── index.css              # 다크/라이트 시맨틱 테마 변수
 │   ├── types/
 │   │   ├── file.ts            # FileMetadata, TokenStats, ViewerMode 등
 │   │   └── tauri-events.ts    # WatcherEvent 타입
@@ -166,7 +175,9 @@ pfile/
 │   │   │   ├── HtmlSandbox.tsx     # iframe 샌드박스 웹 프리뷰
 │   │   │   ├── DataViewer.tsx      # JSON 트리 뷰 & CSV 테이블 뷰
 │   │   │   ├── MediaViewer.tsx     # 이미지(줌/팬), SVG, 오디오/비디오
-│   │   │   └── DiffViewer.tsx      # Side-by-Side / Inline Diff 비교
+│   │   │   ├── DiffViewer.tsx      # Side-by-Side / Inline Diff 비교
+│   │   │   ├── ArchiveViewer.tsx   # ZIP/TAR 압축 파일 트리뷰 & 추출
+│   │   │   └── ExcelViewer.tsx     # Excel/ODS 스프레드시트 뷰어
 │   │   └── common/
 │   │       ├── Modal.tsx
 │   │       ├── Dialogs.tsx    # 생성, 이름변경, 삭제 확인 모달
@@ -225,7 +236,10 @@ pfile/
 ```bash
 bun run tauri build
 ```
-빌드가 완료되면 `src-tauri/target/release/bundle/` 경로에 Windows `.msi` / `.exe` 설치 파일이 생성됩니다.
+빌드가 완료되면 `src-tauri/target/release/bundle/` 경로에 플랫폼별 설치 파일이 생성됩니다:
+- **macOS**: `pfile.app` + `.dmg`
+- **Windows**: `.exe` (NSIS 설치 마법사, 한/영 지원)
+- **Linux**: `.deb` + `.rpm` + `.AppImage`
 
 ---
 
