@@ -183,7 +183,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         {/* Rendered View */}
         {(!isSource || isSplit) && (
           <div className={`${isSplit ? 'w-1/2' : 'w-full'} h-full overflow-y-auto p-8 relative scroll-smooth`}>
-            <article className="max-w-3xl mx-auto prose prose-invert prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-code:font-mono prose-code:text-sky-300 prose-code:bg-[var(--bg-muted)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2">
+            <article className="max-w-3xl mx-auto prose prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-a:text-[var(--accent)] prose-strong:text-[var(--tx1)] prose-code:font-mono prose-code:text-[var(--info-text)] prose-code:bg-[var(--s6)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-blockquote:text-[var(--tx4)] prose-blockquote:border-[var(--bd1)] prose-li:text-[var(--tx3)] prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-th:text-[var(--tx2)] prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2 prose-td:text-[var(--tx3)] prose-hr:border-[var(--bd2)]">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -208,7 +208,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                     const isInline = !match && !String(children).includes('\n');
                     if (isInline) {
                       return (
-                        <code className="bg-[var(--bg-muted)] text-sky-300 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                        <code className="bg-[var(--s6)] text-[var(--info-text)] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
                           {children}
                         </code>
                       );
