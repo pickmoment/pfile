@@ -19,6 +19,8 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
 ### 2. AI 워크플로우 최적화 리치 뷰어 (Rich Viewers)
 - **📝 Markdown Viewer**:
   - GFM 마크다운 완벽 지원 (테이블, 체크리스트, 각주).
+  - **YAML Frontmatter 자동 렌더링**: 문서 메타데이터를 작고 정돈된 key/value 표로 표시.
+  - 렌더링된 본문과 표의 텍스트 선택·복사 지원.
   - **Mermaid 다이어그램 자동 렌더링** (`graph`, `sequenceDiagram`, `classDiagram`, `flowchart`, `gantt`, `pie` 등).
   - **KaTeX 수식 렌더링** (`$E=mc^2$`, 수식 블록).
   - **3가지 뷰 모드**: [렌더 뷰 | 소스(Monaco) 뷰 | 분할(Split 50:50) 뷰].
@@ -115,11 +117,12 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
 - **`serde` / `serde_json`**: 직렬화 및 IPC 통신
 
 ### Frontend (React 19 & Vite)
-- **React 19**, **TypeScript 5.9**, **Vite 6**
+- **React 19**, **TypeScript 5.7**, **Vite 6**
 - **Tailwind CSS 3.4**: 다크/라이트 테마 전환 및 반응형 레이아웃
 - **`zustand`**: 파일 트리, 뷰어 상태, 클립보드, 토스트, Git 상태 전역 관리
 - **`@monaco-editor/react`**: VS Code 엔진 기반 코드 뷰어/에디터
 - **`react-markdown`**, **`remark-gfm`**, **`remark-math`**, **`rehype-katex`**, **`rehype-raw`**: 마크다운 렌더링
+- **`yaml`**: Markdown frontmatter 파싱
 - **`mermaid`**: 차트/다이어그램 실시간 렌더링
 - **`diff`**: 텍스트 라인 Diff 계산
 - **`lucide-react`**: 카테고리별 UI 아이콘
@@ -180,7 +183,7 @@ pfile/
 │   │   ├── viewer/
 │   │   │   ├── ViewerContainer.tsx # 카테고리별 뷰어 라우팅
 │   │   │   ├── ViewerHeader.tsx    # 토큰 통계, LLM 복사, Diff 버튼
-│   │   │   ├── MarkdownViewer.tsx  # GFM, Mermaid, KaTeX, TOC, 소스/렌더 뷰
+│   │   │   ├── MarkdownViewer.tsx  # GFM, Frontmatter, Mermaid, KaTeX, TOC, 소스/렌더 뷰
 │   │   │   ├── CodeViewer.tsx      # Monaco 에디터
 │   │   │   ├── HtmlSandbox.tsx     # iframe 샌드박스 웹 프리뷰
 │   │   │   ├── DataViewer.tsx      # JSON 트리 뷰 & CSV 테이블 뷰

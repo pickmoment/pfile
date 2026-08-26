@@ -154,7 +154,7 @@ export const ViewerContainer: React.FC = () => {
       )}
 
       {/* Viewer Content Routing */}
-      <div className="flex-1 w-full h-full overflow-hidden relative">
+      <div key={selectedFile.path} className="flex-1 w-full h-full overflow-hidden relative">
         {diffTargetFile ? (
           <DiffViewer
             originalFile={selectedFile}

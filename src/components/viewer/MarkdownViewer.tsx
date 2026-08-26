@@ -5,6 +5,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
+import { parse as parseYaml } from 'yaml';
 import Editor from '@monaco-editor/react';
 import { Copy, Check, ListTree, ChevronRight } from 'lucide-react';
 import { useViewerStore } from '../../store/useViewerStore';
@@ -23,6 +24,43 @@ interface MarkdownViewerProps {
   onChange?: (newContent: string) => void;
   isEditing?: boolean;
 }
+interface ParsedMarkdown {
+  body: string;
+  frontmatter: Array<[string, unknown]>;
+}
+
+const FRONTMATTER_PATTERN = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+
+const parseFrontmatter = (content: string): ParsedMarkdown => {
+  const match = content.match(FRONTMATTER_PATTERN);
+  if (!match) return { body: content, frontmatter: [] };
+
+  try {
+    const value: unknown = parseYaml(match[1]);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return { body: content, frontmatter: [] };
+    }
+
+    return {
+      body: content.slice(match[0].length),
+      frontmatter: Object.entries(value as Record<string, unknown>),
+    };
+  } catch {
+    return { body: content, frontmatter: [] };
+  }
+};
+
+const formatFrontmatterValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
 
 // Mermaid Renderer Component
 const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
@@ -110,6 +148,33 @@ const CodeBlock: React.FC<{
   );
 };
 
+const FrontmatterTable: React.FC<{ entries: Array<[string, unknown]> }> = ({ entries }) => (
+  <section
+    aria-label="Frontmatter"
+    className="mb-5 inline-block min-w-72 max-w-full overflow-hidden rounded-md border border-[var(--bd2)] bg-[var(--s3)] align-top text-[11px]"
+  >
+    <div className="border-b border-[var(--bd2)] bg-[var(--s5)] px-2.5 py-1 font-semibold uppercase tracking-wider text-[10px] text-[var(--tx5)]">
+      Frontmatter
+    </div>
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full border-collapse">
+        <tbody>
+          {entries.map(([key, value]) => (
+            <tr key={key} className="border-b border-[var(--bd2)] last:border-b-0">
+              <th className="w-28 whitespace-nowrap px-2.5 py-1 text-left align-top font-medium text-[var(--tx4)]">
+                {key}
+              </th>
+              <td className="max-w-lg whitespace-pre-wrap break-words px-2.5 py-1 font-mono text-[var(--tx3)]">
+                {formatFrontmatterValue(value)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+);
+
 export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   content,
   onChange,
@@ -120,10 +185,11 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const toggleToc = useViewerStore((s) => s.toggleToc);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
+  const parsedMarkdown = useMemo(() => parseFrontmatter(content), [content]);
 
   // Extract headings for Table of Contents
   const headings = useMemo(() => {
-    const lines = content.split('\n');
+    const lines = parsedMarkdown.body.split('\n');
     const items: Array<{ id: string; text: string; level: number }> = [];
 
     lines.forEach((line) => {
@@ -140,7 +206,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     });
 
     return items;
-  }, [content]);
+  }, [parsedMarkdown.body]);
 
   const scrollToHeading = (id: string) => {
     setActiveHeadingId(id);
@@ -183,11 +249,29 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         {/* Rendered View */}
         {(!isSource || isSplit) && (
           <div className={`${isSplit ? 'w-1/2' : 'w-full'} h-full overflow-y-auto p-8 relative scroll-smooth`}>
-            <article className="max-w-3xl mx-auto prose prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-a:text-[var(--accent)] prose-strong:text-[var(--tx1)] prose-code:font-mono prose-code:text-[var(--info-text)] prose-code:bg-[var(--s6)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-blockquote:text-[var(--tx4)] prose-blockquote:border-[var(--bd1)] prose-li:text-[var(--tx3)] prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-th:text-[var(--tx2)] prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2 prose-td:text-[var(--tx3)] prose-hr:border-[var(--bd2)]">
+            <article className="max-w-3xl mx-auto select-text prose prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-a:text-[var(--accent)] prose-strong:text-[var(--tx1)] prose-code:font-mono prose-code:text-[var(--info-text)] prose-code:bg-[var(--s6)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-blockquote:text-[var(--tx4)] prose-blockquote:border-[var(--bd1)] prose-li:text-[var(--tx3)] prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-th:text-[var(--tx2)] prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2 prose-td:text-[var(--tx3)] prose-hr:border-[var(--bd2)]">
+              {parsedMarkdown.frontmatter.length > 0 && (
+                <FrontmatterTable entries={parsedMarkdown.frontmatter} />
+              )}
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex, rehypeRaw]}
                 components={{
+                  table: ({ children }) => (
+                    <table className="w-full border-collapse border border-[var(--bd1)] my-4">
+                      {children}
+                    </table>
+                  ),
+                  th: ({ children }) => (
+                    <th className="border border-[var(--bd1)] bg-[var(--s5)] px-3 py-2 text-left font-semibold text-[var(--tx2)]">
+                      {children}
+                    </th>
+                  ),
+                  td: ({ children }) => (
+                    <td className="border border-[var(--bd1)] px-3 py-2 text-[var(--tx3)]">
+                      {children}
+                    </td>
+                  ),
                   h1: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
@@ -222,7 +306,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                   },
                 }}
               >
-                {content}
+                {parsedMarkdown.body}
               </ReactMarkdown>
             </article>
           </div>
