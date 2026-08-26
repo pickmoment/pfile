@@ -183,7 +183,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => goBack()}
             disabled={!canGoBack}
             title="Back (Alt+Left)"
-            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -192,7 +192,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => goForward()}
             disabled={!canGoForward}
             title="Forward (Alt+Right)"
-            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -200,7 +200,7 @@ export const TopToolbar: React.FC = () => {
           <button
             onClick={() => goUp()}
             title="Up to Parent Directory (Alt+Up)"
-            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
           >
             <ArrowUp className="w-3.5 h-3.5" />
           </button>
@@ -223,7 +223,7 @@ export const TopToolbar: React.FC = () => {
                   else addFavorite(currentDirectory);
                 }}
                 title={isFav ? 'Remove directory from favorites' : 'Add directory to favorites'}
-                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
               >
                 <Star className={`w-3.5 h-3.5 ${isFav ? 'text-amber-400 fill-amber-400' : ''}`} />
               </button>
@@ -234,7 +234,7 @@ export const TopToolbar: React.FC = () => {
             <button
               onClick={() => setPlacesDropdownOpen(!placesDropdownOpen)}
               title="Quick Places & Drives"
-              className="flex items-center gap-1 p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white text-xs transition-colors"
+              className="flex items-center gap-1 p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-[var(--tx1)] text-xs transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-indigo-400" />
             </button>
@@ -252,7 +252,7 @@ export const TopToolbar: React.FC = () => {
                         setCurrentDirectory(item.path);
                         setPlacesDropdownOpen(false);
                       }}
-                      className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-200 text-left transition-colors font-mono text-[11px]"
+                      className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--info-bg)] hover:text-[var(--info-text)] text-left transition-colors font-mono text-[11px]"
                     >
                       {renderQuickPathIcon(item.kind)}
                       <span className="truncate">{item.name}</span>
@@ -267,7 +267,7 @@ export const TopToolbar: React.FC = () => {
             onClick={() => refreshDirectory()}
             disabled={isLoading}
             title="Refresh Workspace (F5)"
-            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-400' : ''}`} />
           </button>
@@ -328,7 +328,7 @@ export const TopToolbar: React.FC = () => {
           >
             <Zap className="w-3.5 h-3.5 text-amber-300" />
             <span>Quick Jump</span>
-            <span className="text-[10px] bg-indigo-950/60 px-1 py-0.2 rounded border border-indigo-400/30 text-indigo-200">
+            <span className="text-[10px] bg-[var(--info-bg)] px-1 py-0.2 rounded border border-[var(--info-border)] text-[var(--info-text)]">
               Ctrl+P
             </span>
           </button>
@@ -341,7 +341,7 @@ export const TopToolbar: React.FC = () => {
                   setCreateDialogOpen(true);
                 }}
                 title="Create New File"
-                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-[var(--tx1)] transition-colors"
               >
                 <Plus className="w-3.5 h-3.5 text-sky-400" />
               </button>
@@ -351,7 +351,7 @@ export const TopToolbar: React.FC = () => {
                   setCreateDialogOpen(true);
                 }}
                 title="Create New Folder"
-                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-[var(--tx1)] transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
               </button>
@@ -398,7 +398,7 @@ export const TopToolbar: React.FC = () => {
             title={`Toggle Hidden Files (${showHiddenFiles ? 'Visible' : 'Hidden'}) • Ctrl+H`}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-mono transition-colors ${
               showHiddenFiles
-                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                ? 'bg-[var(--warning-bg)] border-[var(--warning-border)] text-[var(--warning-text)]'
                 : 'bg-[var(--s3)] border-[var(--bd2)] text-[var(--tx4)] hover:text-[var(--tx2)]'
             }`}
           >

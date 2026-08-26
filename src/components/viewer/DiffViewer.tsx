@@ -68,28 +68,28 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       {/* Diff Header */}
       <div className="h-10 bg-[var(--s4)] border-b border-[var(--bd2)] px-4 flex items-center justify-between text-xs text-[var(--tx3)] select-none">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 font-semibold text-indigo-300">
+          <div className="flex items-center gap-1.5 font-semibold text-[var(--info-text)]">
             <GitCompare className="w-4 h-4 text-indigo-400" />
             <span>Comparing:</span>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-[11px]">
-            <span className="text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
+            <span className="text-[var(--danger-text)] bg-[var(--danger-bg)] px-2 py-0.5 rounded border border-[var(--danger-border)]">
               - {originalFile.name} (Base)
             </span>
             <span className="text-[var(--tx5)]">vs</span>
-            <span className="text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+            <span className="text-[var(--success-text)] bg-[var(--success-bg)] px-2 py-0.5 rounded border border-[var(--success-border)]">
               + {targetFile.name} (Modified)
             </span>
           </div>
 
           {/* Change counts */}
           <div className="flex items-center gap-2 font-mono text-[11px] ml-2">
-            <span className="flex items-center gap-0.5 text-emerald-400 font-semibold">
+            <span className="flex items-center gap-0.5 text-[var(--success-text)] font-semibold">
               <Plus className="w-3 h-3" />
               {addedCount}
             </span>
-            <span className="flex items-center gap-0.5 text-rose-400 font-semibold">
+            <span className="flex items-center gap-0.5 text-[var(--danger-text)] font-semibold">
               <Minus className="w-3 h-3" />
               {removedCount}
             </span>
@@ -103,7 +103,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               onClick={() => setDiffMode('side-by-side')}
               title="Side by Side"
               className={`p-1.5 rounded text-xs transition-colors ${
-                diffMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-white'
+                diffMode === 'side-by-side' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               onClick={() => setDiffMode('inline')}
               title="Inline Unified"
               className={`p-1.5 rounded text-xs transition-colors ${
-                diffMode === 'inline' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-white'
+                diffMode === 'inline' ? 'bg-blue-600 text-white' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
               }`}
             >
               <AlignJustify className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           <button
             onClick={onClose}
             title="Exit Diff Mode"
-            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-rose-300 transition-colors"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--danger-text)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -160,12 +160,12 @@ const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
           let tNum = targetLine.toString();
 
           if (change.added) {
-            rowClass = 'bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-200';
+            rowClass = 'bg-[var(--success-bg)] hover:bg-[var(--success-bg)] text-[var(--success-text)]';
             sign = '+';
             oNum = '';
             targetLine++;
           } else if (change.removed) {
-            rowClass = 'bg-rose-950/30 hover:bg-rose-950/50 text-rose-200';
+            rowClass = 'bg-[var(--danger-bg)] hover:bg-[var(--danger-bg)] text-[var(--danger-text)]';
             sign = '-';
             tNum = '';
             origLine++;
@@ -224,7 +224,7 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                   line === undefined
                     ? 'bg-[var(--bg-deep)] text-[var(--tx6)]'
                     : isDiff
-                    ? 'bg-rose-950/25 text-rose-200'
+                    ? 'bg-[var(--danger-bg)] text-[var(--danger-text)]'
                     : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                 }`}
               >
@@ -257,7 +257,7 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                   line === undefined
                     ? 'bg-[var(--bg-deep)] text-[var(--tx6)]'
                     : isDiff
-                    ? 'bg-emerald-950/25 text-emerald-200'
+                    ? 'bg-[var(--success-bg)] text-[var(--success-text)]'
                     : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                 }`}
               >

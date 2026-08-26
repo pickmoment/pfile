@@ -94,8 +94,8 @@ export const ViewerContainer: React.FC = () => {
   if (error) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--s2)] text-[var(--tx4)] p-6">
-        <div className="p-4 bg-rose-950/30 border border-rose-800/50 rounded-xl text-xs text-rose-300 max-w-md text-center">
-          <p className="font-semibold text-rose-200 mb-1">Notice</p>
+        <div className="p-4 bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-xl text-xs text-[var(--danger-text)] max-w-md text-center">
+          <p className="font-semibold text-[var(--danger-text)] mb-1">Notice</p>
           <p className="font-mono text-[11px] mb-3">{error}</p>
           <button
             onClick={() => invoke('open_in_default_app', { path: selectedFile.path })}
@@ -139,7 +139,7 @@ export const ViewerContainer: React.FC = () => {
         <button
           onClick={toggleContentOnly}
           title="Exit content-only mode (Esc)"
-          className="fixed top-3 right-3 z-50 p-2 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-white backdrop-blur-sm border border-[var(--bd1)] transition-all opacity-0 hover:opacity-100 focus:opacity-100"
+          className="fixed top-3 right-3 z-50 p-2 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx1)] backdrop-blur-sm border border-[var(--bd1)] transition-all opacity-0 hover:opacity-100 focus:opacity-100"
           style={{ opacity: undefined }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.15')}

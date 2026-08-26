@@ -85,7 +85,7 @@ export const Favorites: React.FC = () => {
                 onClick={() => handleClick(favPath)}
                 className={`group flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-colors text-xs font-mono ${
                   isCurrent
-                    ? 'bg-amber-400/10 text-amber-300 font-medium'
+                    ? 'bg-[var(--warning-bg)] text-[var(--warning-text)] font-medium'
                     : 'text-[var(--tx3)] hover:bg-[var(--s7)] hover:text-[var(--tx1)]'
                 }`}
                 title={favPath}

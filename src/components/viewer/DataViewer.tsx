@@ -291,7 +291,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
             </button>
             <button
               onClick={() => setViewMode('raw')}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-[var(--tx4)] hover:text-white"
+              className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-[var(--tx4)] hover:text-[var(--tx1)]"
             >
               <Code2 className="w-3 h-3" />
               <span>Raw JSON</span>

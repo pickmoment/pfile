@@ -41,11 +41,11 @@ function statusChar(kind: string): string {
 }
 
 function statusColor(s: GitFileStatus): string {
-  if (s.worktree_status === 'conflicted') return 'text-red-400';
-  if (s.index_status) return 'text-emerald-400';
+  if (s.worktree_status === 'conflicted') return 'text-[var(--git-deleted)]';
+  if (s.index_status) return 'text-[var(--git-staged)]';
   if (s.worktree_status === 'untracked') return 'text-[var(--tx5)]';
-  if (s.worktree_status === 'deleted') return 'text-red-400';
-  return 'text-amber-400';
+  if (s.worktree_status === 'deleted') return 'text-[var(--git-deleted)]';
+  return 'text-[var(--git-modified)]';
 }
 
 function fileName(path: string): string {
@@ -274,7 +274,7 @@ export const GitPanel: React.FC = () => {
               <div>
                 <button
                   onClick={() => setStagedOpen(!stagedOpen)}
-                  className="w-full flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-emerald-400 uppercase tracking-wider hover:bg-[var(--s6)]"
+                  className="w-full flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-[var(--git-staged)] uppercase tracking-wider hover:bg-[var(--s6)]"
                 >
                   {stagedOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   <span>Staged ({staged.length})</span>
@@ -298,7 +298,7 @@ export const GitPanel: React.FC = () => {
               <div>
                 <button
                   onClick={() => setChangesOpen(!changesOpen)}
-                  className="w-full flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-amber-400 uppercase tracking-wider hover:bg-[var(--s6)]"
+                  className="w-full flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-[var(--git-modified)] uppercase tracking-wider hover:bg-[var(--s6)]"
                 >
                   {changesOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   <span>Changes ({unstaged.length})</span>

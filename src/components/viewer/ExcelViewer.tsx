@@ -68,9 +68,9 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
   if (parseError) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--s1)] p-8">
-        <div className="p-4 bg-amber-950/30 border border-amber-800/50 rounded-xl text-xs text-amber-300 max-w-md text-center space-y-2">
+        <div className="p-4 bg-[var(--warning-bg)] border border-[var(--warning-border)] rounded-xl text-xs text-[var(--warning-text)] max-w-md text-center space-y-2">
           <AlertTriangle className="w-6 h-6 mx-auto text-amber-400" />
-          <p className="font-semibold text-amber-200">Unable to preview Excel spreadsheet</p>
+          <p className="font-semibold text-[var(--warning-text)]">Unable to preview Excel spreadsheet</p>
           <p className="font-mono text-[11px] text-[var(--tx4)]">{parseError}</p>
         </div>
       </div>

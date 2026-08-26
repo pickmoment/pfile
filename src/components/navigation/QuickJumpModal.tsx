@@ -248,7 +248,7 @@ export const QuickJumpModal: React.FC = () => {
                     }}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-colors text-xs font-mono ${
                       isSelected
-                        ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
+                        ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] ring-1 ring-[var(--selected-border)]'
                         : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                     }`}
                   >
@@ -289,7 +289,7 @@ export const QuickJumpModal: React.FC = () => {
                         onMouseMove={() => { if (selectedIndex !== idx) setSelectedIndex(idx); }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-colors text-xs font-mono ${
                           isSelected
-                            ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
+                            ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] ring-1 ring-[var(--selected-border)]'
                             : 'bg-[var(--s3)] hover:bg-[var(--s7)] text-[var(--tx2)]'
                         }`}
                       >
@@ -324,7 +324,7 @@ export const QuickJumpModal: React.FC = () => {
                           onMouseMove={() => { if (selectedIndex !== absoluteIndex) setSelectedIndex(absoluteIndex); }}
                           className={`flex items-center justify-between px-3 py-1.5 rounded-lg cursor-pointer transition-colors text-xs font-mono ${
                             isSelected
-                              ? 'bg-blue-600/25 text-white ring-1 ring-blue-500/50'
+                              ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] ring-1 ring-[var(--selected-border)]'
                               : 'text-[var(--tx3)] hover:bg-[var(--s7)]'
                           }`}
                         >

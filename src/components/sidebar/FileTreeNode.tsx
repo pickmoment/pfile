@@ -3,7 +3,6 @@ import { ChevronRight, MoreVertical, Edit2, Trash2, FolderSearch } from 'lucide-
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata } from '../../types/file';
 import { getFileIcon } from '../../utils/fileIcons';
-import { formatBytes } from '../../utils/formatters';
 import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useGitStore } from '../../store/useGitStore';
@@ -171,35 +170,35 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
           onContextMenu(e, file);
         }}
         style={{ paddingLeft: `${depth * 14 + 10}px` }}
-        className={`group relative flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer transition-colors ${
+        className={`group relative flex items-center py-1.5 pr-2 rounded-md cursor-pointer transition-colors ${
           file.is_hidden || file.name.startsWith('.') ? 'opacity-70 hover:opacity-100' : ''
         } ${
           isSelected
-            ? 'bg-blue-600/25 text-blue-200 font-medium border-l-2 border-blue-500'
-            : 'text-[var(--tx3)] hover:bg-[var(--s7)] hover:text-[var(--tx1)]'
-        } ${isDragOver ? 'bg-indigo-600/30 ring-1 ring-indigo-500' : ''}`}
+            ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] font-medium border-l-2 border-[var(--selected-border)]'
+            : 'text-[var(--tx3)] hover:bg-[var(--s6)] hover:text-[var(--tx1)]'
+        } ${isDragOver ? 'bg-[var(--info-bg)] ring-1 ring-[var(--selected-border)]' : ''}`}
       >
-        {/* Left Side: Expand icon + Category/Extension Icon + Name */}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        {/* Left: Chevron + Icon + Name — fills all available width */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
           {file.is_dir ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 toggleDirExpanded(file.path);
               }}
-              className="p-0.5 rounded hover:bg-[var(--s7)] text-[var(--tx4)] hover:text-[var(--tx2)] transition-transform"
+              className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--s7)] text-[var(--tx4)] hover:text-[var(--tx2)] transition-transform"
             >
               <ChevronRight
                 className={`w-3.5 h-3.5 transition-transform duration-150 ${
-                  isExpanded ? 'rotate-90 text-amber-400' : ''
+                  isExpanded ? 'rotate-90 text-[var(--warning-text)]' : ''
                 }`}
               />
             </button>
           ) : (
-            <div className="w-3.5" />
+            <div className="w-3.5 flex-shrink-0" />
           )}
 
-          {getFileIcon(file.category, file.extension, file.is_dir, isExpanded, 'w-4 h-4')}
+          <span className="flex-shrink-0">{getFileIcon(file.category, file.extension, file.is_dir, isExpanded, 'w-4 h-4')}</span>
 
           {isInlineRenaming ? (
             <input
@@ -213,7 +212,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
                 if (e.key === 'Escape') setIsInlineRenaming(false);
               }}
               onClick={(e) => e.stopPropagation()}
-              className="px-1 py-0.5 text-xs bg-[var(--s1)] border border-blue-500 rounded text-[var(--tx1)] font-mono focus:outline-none w-full"
+              className="px-1 py-0.5 text-xs bg-[var(--s1)] border border-[var(--selected-border)] rounded text-[var(--tx1)] font-mono focus:outline-none flex-1 min-w-0"
             />
           ) : (
             <span
@@ -221,52 +220,46 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
                 e.stopPropagation();
                 setIsInlineRenaming(true);
               }}
-              className="truncate font-mono text-[11.5px]"
+              className="truncate font-mono text-[11.5px] flex-1 min-w-0"
               title={file.name}
             >
               {file.name}
             </span>
           )}
-        </div>
 
-        {/* Git Status Indicator — always visible */}
-        {gitFileStatus && (
-          <span
-            className={`flex-shrink-0 font-mono font-bold text-[9px] px-1 rounded ${
-              gitFileStatus.worktree_status === 'conflicted' ? 'text-red-400 bg-red-900/30' :
-              gitFileStatus.index_status ? 'text-emerald-400 bg-emerald-900/20' :
-              gitFileStatus.worktree_status === 'untracked' ? 'text-[var(--tx5)] bg-[var(--s7)]' :
-              gitFileStatus.worktree_status === 'deleted' ? 'text-red-400 bg-red-900/20' :
-              'text-amber-400 bg-amber-900/20'
-            }`}
-            title={`Index: ${gitFileStatus.index_status ?? '—'}  Work: ${gitFileStatus.worktree_status ?? '—'}`}
-          >
-            {gitFileStatus.worktree_status === 'conflicted' ? 'C' :
-             gitFileStatus.worktree_status === 'untracked' ? '?' :
-             gitFileStatus.worktree_status === 'deleted' ? 'D' :
-             gitFileStatus.worktree_status === 'modified' ? 'M' :
-             gitFileStatus.index_status === 'added' ? 'A' :
-             gitFileStatus.index_status === 'modified' ? 'M' :
-             gitFileStatus.index_status === 'deleted' ? 'D' :
-             gitFileStatus.index_status === 'renamed' ? 'R' : '·'}
-          </span>
-        )}
-
-        {/* Right Side: Size & Hover Action Buttons */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {!file.is_dir && (
-            <span className="text-[10px] text-[var(--tx5)] font-mono group-hover:hidden">
-              {formatBytes(file.size)}
+          {/* Git badge — sits right after name, hidden on hover when actions appear */}
+          {gitFileStatus && (
+            <span
+              className={`flex-shrink-0 font-mono font-bold text-[9px] px-1 rounded ml-auto group-hover:hidden ${
+                gitFileStatus.worktree_status === 'conflicted' ? 'text-[var(--git-conflict)] bg-[var(--git-deleted-bg)]' :
+                gitFileStatus.index_status ? 'text-[var(--git-staged)] bg-[var(--git-staged-bg)]' :
+                gitFileStatus.worktree_status === 'untracked' ? 'text-[var(--git-untracked)] bg-[var(--s7)]' :
+                gitFileStatus.worktree_status === 'deleted' ? 'text-[var(--git-deleted)] bg-[var(--git-deleted-bg)]' :
+                'text-[var(--git-modified)] bg-[var(--git-modified-bg)]'
+              }`}
+              title={`Index: ${gitFileStatus.index_status ?? '—'}  Work: ${gitFileStatus.worktree_status ?? '—'}`}
+            >
+              {gitFileStatus.worktree_status === 'conflicted' ? 'C' :
+               gitFileStatus.worktree_status === 'untracked' ? '?' :
+               gitFileStatus.worktree_status === 'deleted' ? 'D' :
+               gitFileStatus.worktree_status === 'modified' ? 'M' :
+               gitFileStatus.index_status === 'added' ? 'A' :
+               gitFileStatus.index_status === 'modified' ? 'M' :
+               gitFileStatus.index_status === 'deleted' ? 'D' :
+               gitFileStatus.index_status === 'renamed' ? 'R' : '·'}
             </span>
           )}
+        </div>
 
+        {/* Action buttons — hidden by default, appear on hover with bg to cover text underneath */}
+        <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0 ml-1 bg-[var(--s6)] rounded px-0.5">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRenameRequest(file);
             }}
             title="Rename (F2)"
-            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
+            className="p-0.5 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
           >
             <Edit2 className="w-3 h-3" />
           </button>
@@ -277,7 +270,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               invoke('show_in_file_manager', { path: file.path });
             }}
             title="Show in Explorer"
-            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-amber-300"
+            className="p-0.5 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
           >
             <FolderSearch className="w-3 h-3" />
           </button>
@@ -288,7 +281,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               onDeleteRequest(file);
             }}
             title="Delete"
-            className="p-1 rounded hover:bg-rose-900/50 text-[var(--tx4)] hover:text-rose-400"
+            className="p-0.5 rounded hover:bg-[var(--danger-bg)] text-[var(--tx4)] hover:text-[var(--danger-text)]"
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -298,7 +291,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               e.stopPropagation();
               onContextMenu(e, file);
             }}
-            className="p-1 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
+            className="p-0.5 rounded hover:bg-[var(--bg-strong)] text-[var(--tx4)] hover:text-[var(--tx2)]"
           >
             <MoreVertical className="w-3 h-3" />
           </button>

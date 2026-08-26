@@ -44,8 +44,37 @@
   --selection-bg: rgba(59, 130, 246, 0.4);
   --selection-fg: #ffffff;
 
-  /* Accent (unchanged across themes) */
+  /* Accent */
   --accent: #3b82f6;
+
+  /* Selected item */
+  --selected-bg: rgba(59, 130, 246, 0.20);
+  --selected-text: #93c5fd;
+  --selected-border: #3b82f6;
+
+  /* Git status colors */
+  --git-staged: #34d399;
+  --git-staged-bg: rgba(16, 185, 129, 0.15);
+  --git-modified: #fbbf24;
+  --git-modified-bg: rgba(245, 158, 11, 0.15);
+  --git-deleted: #f87171;
+  --git-deleted-bg: rgba(239, 68, 68, 0.15);
+  --git-untracked: #94a3b8;
+  --git-conflict: #f87171;
+
+  /* Semantic surfaces */
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --danger-border: rgba(239, 68, 68, 0.25);
+  --danger-text: #fca5a5;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(245, 158, 11, 0.25);
+  --warning-text: #fcd34d;
+  --info-bg: rgba(59, 130, 246, 0.12);
+  --info-border: rgba(59, 130, 246, 0.25);
+  --info-text: #93c5fd;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --success-border: rgba(16, 185, 129, 0.25);
+  --success-text: #6ee7b7;
 }
 
 /* ===== Theme: Light ===== */
@@ -82,6 +111,35 @@
 
   --selection-bg: rgba(59, 130, 246, 0.25);
   --selection-fg: #0f172a;
+
+  /* Selected item */
+  --selected-bg: rgba(59, 130, 246, 0.12);
+  --selected-text: #1d4ed8;
+  --selected-border: #3b82f6;
+
+  /* Git status colors */
+  --git-staged: #059669;
+  --git-staged-bg: rgba(16, 185, 129, 0.12);
+  --git-modified: #d97706;
+  --git-modified-bg: rgba(245, 158, 11, 0.10);
+  --git-deleted: #dc2626;
+  --git-deleted-bg: rgba(239, 68, 68, 0.10);
+  --git-untracked: #64748b;
+  --git-conflict: #dc2626;
+
+  /* Semantic surfaces */
+  --danger-bg: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.25);
+  --danger-text: #dc2626;
+  --warning-bg: rgba(245, 158, 11, 0.08);
+  --warning-border: rgba(245, 158, 11, 0.25);
+  --warning-text: #d97706;
+  --info-bg: rgba(59, 130, 246, 0.08);
+  --info-border: rgba(59, 130, 246, 0.25);
+  --info-text: #1d4ed8;
+  --success-bg: rgba(16, 185, 129, 0.08);
+  --success-border: rgba(16, 185, 129, 0.25);
+  --success-text: #059669;
 }
 
 body {

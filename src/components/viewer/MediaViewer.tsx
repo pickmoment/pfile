@@ -136,7 +136,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <button
                 onClick={() => setZoom((z) => Math.max(10, z - 25))}
                 title="Zoom Out"
-                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
@@ -146,7 +146,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <button
                 onClick={() => setZoom((z) => Math.min(500, z + 25))}
                 title="Zoom In"
-                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
@@ -156,7 +156,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                   setPan({ x: 0, y: 0 });
                 }}
                 title="Reset Zoom & Pan"
-                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white"
+                className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -164,7 +164,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
                 onClick={() => setShowCheckerboard((c) => !c)}
                 title="Toggle Transparency Grid"
                 className={`p-1.5 rounded transition-colors ${
-                  showCheckerboard ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
+                  showCheckerboard ? 'bg-[var(--info-bg)] text-[var(--info-text)]' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
                 }`}
               >
                 <Grid className="w-3.5 h-3.5" />

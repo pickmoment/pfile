@@ -75,7 +75,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('desktop')}
             title="Desktop (100%)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'desktop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
+              viewportSize === 'desktop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
             }`}
           >
             <Monitor className="w-3 h-3" />
@@ -85,7 +85,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('laptop')}
             title="Laptop (1024px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'laptop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
+              viewportSize === 'laptop' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
             }`}
           >
             <Laptop className="w-3 h-3" />
@@ -95,7 +95,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('tablet')}
             title="Tablet (768px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'tablet' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
+              viewportSize === 'tablet' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
             }`}
           >
             <Tablet className="w-3 h-3" />
@@ -105,7 +105,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setViewportSize('mobile')}
             title="Mobile (375px)"
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-              viewportSize === 'mobile' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-white'
+              viewportSize === 'mobile' ? 'bg-blue-600 text-white shadow-sm' : 'text-[var(--tx4)] hover:text-[var(--tx1)]'
             }`}
           >
             <Smartphone className="w-3 h-3" />
@@ -118,7 +118,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
           <button
             onClick={handleRefresh}
             title="Reload Sandbox Frame"
-            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-white transition-colors"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)] transition-colors"
           >
             <RotateCw className="w-3.5 h-3.5" />
           </button>
@@ -126,8 +126,8 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
             onClick={() => setShowConsole(!showConsole)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition-colors border ${
               showConsole
-                ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-200'
-                : 'bg-[var(--bg-muted)] border-[var(--bd1)] text-[var(--tx3)] hover:text-white'
+                ? 'bg-[var(--info-bg)] border-[var(--info-border)] text-[var(--info-text)]'
+                : 'bg-[var(--bg-muted)] border-[var(--bd1)] text-[var(--tx3)] hover:text-[var(--tx1)]'
             }`}
           >
             <Terminal className="w-3 h-3 text-indigo-400" />
@@ -176,7 +176,7 @@ export const HtmlSandbox: React.FC<HtmlSandboxProps> = ({ htmlContent }) => {
                   key={log.id}
                   className={`flex items-start gap-2 text-[11px] py-0.5 ${
                     log.type === 'error'
-                      ? 'text-rose-400 bg-rose-950/20 px-1 rounded'
+                      ? 'text-[var(--danger-text)] bg-[var(--danger-bg)] px-1 rounded'
                       : log.type === 'warn'
                       ? 'text-amber-400'
                       : 'text-[var(--tx3)]'

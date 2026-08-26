@@ -159,14 +159,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <div className="py-1">
         <button
           onClick={handleCopyPath}
-          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-300 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--info-bg)] hover:text-[var(--info-text)] text-left transition-colors"
         >
           <Link className="w-3.5 h-3.5 text-[var(--tx4)]" />
           <span>Copy Absolute Path</span>
         </button>
         <button
           onClick={handleCopyRelativePath}
-          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-600/20 hover:text-blue-300 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--info-bg)] hover:text-[var(--info-text)] text-left transition-colors"
         >
           <Copy className="w-3.5 h-3.5 text-[var(--tx4)]" />
           <span>Copy Relative Path</span>
@@ -280,7 +280,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 }
                 onClose();
               }}
-              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-emerald-600/20 hover:text-emerald-300 text-left transition-colors"
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--success-bg)] hover:text-[var(--success-text)] text-left transition-colors"
             >
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
               <span>Stage File</span>
@@ -295,7 +295,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 }
                 onClose();
               }}
-              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-amber-600/20 hover:text-amber-300 text-left transition-colors"
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--warning-bg)] hover:text-[var(--warning-text)] text-left transition-colors"
             >
               <Minus className="w-3.5 h-3.5 text-amber-400" />
               <span>Unstage File</span>
@@ -311,7 +311,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 }
                 onClose();
               }}
-              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-rose-600/20 hover:text-rose-300 text-left transition-colors"
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)] text-left transition-colors"
             >
               <Undo2 className="w-3.5 h-3.5 text-rose-400" />
               <span>Discard Changes</span>
@@ -327,13 +327,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             onClose();
             onDelete(file);
           }}
-          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-rose-600/20 text-rose-300 text-left transition-colors"
+          className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-[var(--danger-bg)] text-[var(--danger-text)] text-left transition-colors"
         >
           <span className="flex items-center gap-2">
             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
             <span>Delete...</span>
           </span>
-          <span className="text-[10px] text-rose-400/60 font-mono">Del</span>
+          <span className="text-[10px] text-[var(--danger-text)] opacity-60 font-mono">Del</span>
         </button>
       </div>
     </div>

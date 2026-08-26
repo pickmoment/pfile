@@ -68,7 +68,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-[var(--tx1)] bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -171,7 +171,7 @@ export const RenameDialog: React.FC<RenameDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-[var(--tx1)] bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -252,7 +252,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-white bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-[var(--tx3)] hover:text-[var(--tx1)] bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -269,10 +269,10 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
       }
     >
       <div className="space-y-4">
-        <div className="flex items-start gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300">
+        <div className="flex items-start gap-3 p-3 bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg text-[var(--danger-text)]">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="text-xs">
-            <p className="font-medium text-rose-200">
+            <p className="font-medium text-[var(--danger-text)]">
               Are you sure you want to delete {targetPaths.length} item(s)?
             </p>
               <ul className="mt-1.5 max-h-24 overflow-y-auto space-y-0.5 text-[var(--tx3)] font-mono text-[11px]">

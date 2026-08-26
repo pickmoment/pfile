@@ -78,13 +78,13 @@ export const StatusBar: React.FC = () => {
               title="Toggle Source Control"
             >
               <GitBranch className="w-3 h-3 text-orange-400" />
-              <span className={isDetached ? 'text-amber-400' : ''}>
+              <span className={isDetached ? 'text-[var(--warning-text)]' : ''}>
                 {isDetached ? `@${branch}` : branch ?? '—'}
               </span>
               {ahead > 0 && <span className="flex items-center text-[10px] text-[var(--tx5)]"><ArrowUp className="w-2.5 h-2.5" />{ahead}</span>}
               {behind > 0 && <span className="flex items-center text-[10px] text-[var(--tx5)]"><ArrowDown className="w-2.5 h-2.5" />{behind}</span>}
               {(modifiedCount > 0 || stagedCount > 0) && (
-                <span className="text-[10px] text-amber-400">
+                <span className="text-[10px] text-[var(--warning-text)]">
                   {modifiedCount > 0 ? `${modifiedCount}±` : ''}{stagedCount > 0 ? ` ${stagedCount}✓` : ''}
                 </span>
               )}

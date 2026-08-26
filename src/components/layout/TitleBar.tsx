@@ -28,7 +28,7 @@ export const TitleBar: React.FC = () => {
           <Sparkles className="w-3 h-3" />
         </div>
         <span className="font-semibold text-[var(--tx1)] tracking-tight">pfile</span>
-        <span className="text-[10px] text-indigo-400 bg-indigo-950/60 border border-indigo-800/50 px-1.5 py-0.2 rounded font-mono">
+        <span className="text-[10px] text-[var(--info-text)] bg-[var(--info-bg)] border border-[var(--info-border)] px-1.5 py-0.2 rounded font-mono">
           AI Explorer
         </span>
       </div>

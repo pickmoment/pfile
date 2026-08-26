@@ -52,7 +52,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             onClick={() => setWordWrap((w) => (w === 'on' ? 'off' : 'on'))}
             title="Toggle Word Wrap"
             className={`p-1 rounded transition-colors ${
-              wordWrap === 'on' ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
+              wordWrap === 'on' ? 'bg-[var(--info-bg)] text-[var(--info-text)]' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
             }`}
           >
             <WrapText className="w-3.5 h-3.5" />
@@ -61,7 +61,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             onClick={() => setMinimapEnabled((m) => !m)}
             title="Toggle Minimap"
             className={`p-1 rounded transition-colors ${
-              minimapEnabled ? 'bg-blue-600/30 text-blue-300' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
+              minimapEnabled ? 'bg-[var(--info-bg)] text-[var(--info-text)]' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />

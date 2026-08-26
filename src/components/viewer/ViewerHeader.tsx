@@ -243,7 +243,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
               <button
                 onClick={() => setIsEditing(true)}
                 title="Edit File"
-                className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-white text-xs transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-[var(--tx1)] text-xs transition-colors"
               >
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
@@ -272,7 +272,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
           <button
             onClick={() => setDiffPickerOpen(true)}
             title="Compare with another file (Diff)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-white text-xs transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-[var(--tx1)] text-xs transition-colors"
           >
             <GitCompare className="w-3.5 h-3.5 text-indigo-400" />
             <span>Diff</span>

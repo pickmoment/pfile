@@ -56,8 +56,8 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
 
   if (error) {
     return (
-      <div className="my-3 p-3 bg-red-950/30 border border-red-800/50 rounded-lg text-xs text-red-300 font-mono">
-        <p className="font-semibold mb-1 text-red-400">Mermaid Render Error</p>
+      <div className="my-3 p-3 bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg text-xs text-[var(--danger-text)] font-mono">
+        <p className="font-semibold mb-1 text-[var(--danger-text)]">Mermaid Render Error</p>
         <pre className="overflow-x-auto whitespace-pre-wrap">{chart}</pre>
       </div>
     );
@@ -97,7 +97,7 @@ const CodeBlock: React.FC<{
         <span>{language || 'text'}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-[var(--tx4)] hover:text-white px-2 py-0.5 rounded hover:bg-[var(--s7)] transition-colors"
+          className="flex items-center gap-1 text-[var(--tx4)] hover:text-[var(--tx1)] px-2 py-0.5 rounded hover:bg-[var(--s7)] transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -234,7 +234,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         <button
           onClick={toggleToc}
           title="Toggle Table of Contents"
-          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-[var(--s6)]/90 hover:bg-[var(--s7)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-white shadow-xl backdrop-blur-md transition-all"
+          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-[var(--s6)]/90 hover:bg-[var(--s7)] border border-[var(--bd1)] text-[var(--tx3)] hover:text-[var(--tx1)] shadow-xl backdrop-blur-md transition-all"
         >
           <ListTree className="w-4 h-4 text-indigo-400" />
         </button>
