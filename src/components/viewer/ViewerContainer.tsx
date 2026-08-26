@@ -12,6 +12,7 @@ import { MediaViewer } from './MediaViewer';
 import { DiffViewer } from './DiffViewer';
 import { ExcelViewer } from './ExcelViewer';
 import { ArchiveViewer } from './ArchiveViewer';
+import { EpubViewer } from './EpubViewer';
 import { Sparkles, FileText, ArrowLeftRight, Binary, ExternalLink, Minimize2 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters';
 
@@ -113,6 +114,7 @@ export const ViewerContainer: React.FC = () => {
   const ext = selectedFile.extension?.toLowerCase() || '';
   const isExcel = ext === 'xlsx' || ext === 'xls' || ext === 'xlsm' || ext === 'xlsb' || ext === 'ods';
   const isArchive = selectedFile.category === 'archive';
+  const isEpub = ext === 'epub';
   const isMedia =
     selectedFile.category === 'image' ||
     selectedFile.category === 'audio' ||
@@ -160,6 +162,8 @@ export const ViewerContainer: React.FC = () => {
             targetFile={diffTargetFile}
             onClose={() => setDiffTargetFile(null)}
           />
+        ) : isEpub ? (
+          <EpubViewer file={selectedFile} />
         ) : isArchive ? (
           <ArchiveViewer file={selectedFile} />
         ) : isExcel ? (

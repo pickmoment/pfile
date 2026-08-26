@@ -41,6 +41,7 @@ pub fn run() {
             commands::archive::archive_list,
             commands::archive::archive_extract_file,
             commands::archive::archive_extract_to,
+            commands::epub::epub_read,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -17,6 +17,7 @@ import {
   Layers,
   Sparkles,
   FileArchive,
+  BookOpen,
 } from 'lucide-react';
 import { FileCategory } from '../types/file';
 
@@ -100,6 +101,10 @@ export function getFileIcon(
 
   if (ext === 'pdf') {
     return <FileText className={`${className} text-red-400 flex-shrink-0`} />;
+  }
+
+  if (ext === 'epub') {
+    return <BookOpen className={`${className} text-teal-400 flex-shrink-0`} />;
   }
 
   return <FileIcon className={`${className} text-[var(--tx4)] flex-shrink-0`} />;

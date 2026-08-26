@@ -69,7 +69,7 @@ pub fn detect_category_and_binary(extension: Option<&str>, is_dir: bool) -> (Fil
 
         // Documents (PDF/Office Binary vs TXT)
         "txt" | "rtf" => (FileCategory::Document, false),
-        "pdf" | "doc" | "docx" | "ppt" | "pptx" => (FileCategory::Document, true),
+        "pdf" | "doc" | "docx" | "ppt" | "pptx" | "epub" => (FileCategory::Document, true),
 
         // Source Code (Text)
         "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "rs" | "py" | "go" | "java" | "c"
