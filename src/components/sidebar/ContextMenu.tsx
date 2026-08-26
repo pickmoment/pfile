@@ -11,11 +11,15 @@ import {
   Star,
   StarOff,
   Link,
+  Plus,
+  Minus,
+  Undo2,
 } from 'lucide-react';
 import { FileMetadata } from '../../types/file';
 import { useFileStore } from '../../store/useFileStore';
 import { useClipboardStore } from '../../store/useClipboardStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useGitStore } from '../../store/useGitStore';
 
 export interface ContextMenuProps {
   x: number;
@@ -47,6 +51,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const clearClipboard = useClipboardStore((s) => s.clear);
 
   const showToast = useToastStore((s) => s.showToast);
+
+  const isRepo = useGitStore((s) => s.isRepo);
+  const gitFileStatus = useGitStore((s) => s.files.find((f) => f.abs_path === file.path));
+  const stageFiles = useGitStore((s) => s.stageFiles);
+  const unstageFiles = useGitStore((s) => s.unstageFiles);
+  const discardFiles = useGitStore((s) => s.discardFiles);
 
   const isFavorite = favorites.includes(file.path);
 
@@ -257,6 +267,58 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <span className="text-[10px] text-[var(--tx5)] font-mono">F2</span>
         </button>
       </div>
+
+      {/* Git actions */}
+      {isRepo && gitFileStatus && (
+        <div className="py-1">
+          {gitFileStatus.worktree_status && gitFileStatus.worktree_status !== 'ignored' && !gitFileStatus.index_status && (
+            <button
+              onClick={async () => {
+                if (currentDirectory) {
+                  await stageFiles(currentDirectory, [gitFileStatus.path]);
+                  showToast('Staged', `"${file.name}" staged`, 'success');
+                }
+                onClose();
+              }}
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-emerald-600/20 hover:text-emerald-300 text-left transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Stage File</span>
+            </button>
+          )}
+          {gitFileStatus.index_status && (
+            <button
+              onClick={async () => {
+                if (currentDirectory) {
+                  await unstageFiles(currentDirectory, [gitFileStatus.path]);
+                  showToast('Unstaged', `"${file.name}" unstaged`, 'info');
+                }
+                onClose();
+              }}
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-amber-600/20 hover:text-amber-300 text-left transition-colors"
+            >
+              <Minus className="w-3.5 h-3.5 text-amber-400" />
+              <span>Unstage File</span>
+            </button>
+          )}
+          {gitFileStatus.worktree_status && gitFileStatus.worktree_status !== 'untracked' && gitFileStatus.worktree_status !== 'ignored' && (
+            <button
+              onClick={async () => {
+                if (currentDirectory) {
+                  await discardFiles(currentDirectory, [gitFileStatus.path]);
+                  showToast('Discarded', `Changes to "${file.name}" discarded`, 'warning');
+                  refreshDirectory();
+                }
+                onClose();
+              }}
+              className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-rose-600/20 hover:text-rose-300 text-left transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Discard Changes</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Delete action */}
       <div className="py-1">

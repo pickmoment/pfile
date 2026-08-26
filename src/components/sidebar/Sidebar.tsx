@@ -1,12 +1,16 @@
 import React from 'react';
 import { Favorites } from './Favorites';
 import { FileTree } from './FileTree';
+import { GitPanel } from './GitPanel';
 import { useFileStore } from '../../store/useFileStore';
+import { useGitStore } from '../../store/useGitStore';
 import { HardDrive } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const files = useFileStore((s) => s.files);
   const currentDirectory = useFileStore((s) => s.currentDirectory);
+  const isRepo = useGitStore((s) => s.isRepo);
+  const gitPanelOpen = useGitStore((s) => s.gitPanelOpen);
 
   return (
     <aside className="w-full h-full bg-[var(--s4)] border-r border-[var(--bd2)] flex flex-col select-none overflow-hidden">
@@ -26,8 +30,17 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
 
-      {/* File Tree List */}
-      <FileTree />
+      {/* File Tree List — shrinks when git panel is open */}
+      <div className={`${isRepo && gitPanelOpen ? 'flex-1 min-h-0 max-h-[50%]' : 'flex-1 min-h-0'} overflow-hidden`}>
+        <FileTree />
+      </div>
+
+      {/* Git Panel — collapsible bottom section */}
+      {isRepo && gitPanelOpen && (
+        <div className="flex-1 min-h-0 border-t border-[var(--bd2)] overflow-hidden">
+          <GitPanel />
+        </div>
+      )}
     </aside>
   );
 };

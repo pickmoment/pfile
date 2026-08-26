@@ -2,7 +2,7 @@
 
 AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 **Rust + Tauri v2 + React 19** 기반의 초고속 데스크톱 파일 탐색 및 리치 프리뷰어입니다.
 
-방대한 양의 마크다운 문서, 코드 스니펫, 인터랙티브 HTML 프로토타입, 데이터(JSON/CSV), 미디어(SVG/이미지/오디오/비디오)를 직관적으로 탐색·관리하고, 네이티브 BPE 토큰 수 측정과 원클릭 AI 프롬프트 복사 및 실시간 변경 감지(Hot-reload)를 지원합니다.
+방대한 양의 마크다운 문서, 코드 스니펫, 인터랙티브 HTML 프로토타입, 데이터(JSON/CSV), 미디어(SVG/이미지/오디오/비디오)를 직관적으로 탐색·관리하고, **내장 Git 소스 컨트롤**, 네이티브 BPE 토큰 수 측정과 원클릭 AI 프롬프트 복사 및 실시간 변경 감지(Hot-reload)를 지원합니다.
 
 ---
 
@@ -12,7 +12,7 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
 - **좌측 사이드바 (Sidebar)**:
   - **즐겨찾기 (Favorites)**: 자주 찾는 AI 프로젝트 폴더 원클릭 고정 및 전환.
   - **계층형 파일 트리 (FileTree)**: 확장자별 컬러풀 Lucide 아이콘, 접기/펼치기, 드래그 앤 드롭 이동.
-  - **컨텍스트 메뉴 & 단축키**: 복사, 잘라내기, 붙여넣기, 인라인 이름변경(`F2`), 안전한 OS 휴지통 삭제(`Del`), 영구 삭제, 탐색기 열기.
+  - **컨텍스트 메뉴 & 단축키**: 복사, 잘라내기, 붙여넣기, 인라인 이름변경(`F2`), 안전한 OS 휴지통 삭제(`Del`), 영구 삭제, 탐색기 열기, **Git Stage/Unstage/Discard**.
   - **상단 툴바**: 경로 Breadcrumb 클릭 이동, 실시간 검색 필터(`Ctrl+F`), 카테고리 퀵 탭 (`ALL`, `MD`, `CODE`, `HTML`, `DATA`, `MEDIA`).
 - **가변 리사이저블 레이아웃**: 드래그로 사이드바 너비를 조절하며, 사용자 설정이 자동 저장됩니다.
 
@@ -41,11 +41,24 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
   - **Side-by-Side (2열)** 및 **Unified Inline (단일 열)** 모드 지원.
   - 추가(+)/삭제(-) 라인 하이라이트 및 변경 통계 수치 제공.
 
-### 3. AI 분석 & 원클릭 컨텍스트 복사
+### 3. 🔀 내장 Git 소스 컨트롤
+- **`git2` (libgit2) 기반 네이티브 Git 통합**: 외부 `git` CLI 의존 없이 Rust 내장 라이브러리로 동작.
+- **자동 Repo 감지**: 현재 디렉토리가 Git 저장소 내부인지 자동 감지하여 UI 활성화.
+- **브랜치 & 상태 표시**:
+  - 하단 상태바에 현재 브랜치명, detached HEAD 상태, ahead/behind 카운트 표시.
+  - 파일 트리 각 파일 옆에 Git 상태 배지 (`M` Modified, `A` Added, `D` Deleted, `?` Untracked, `C` Conflict) — 색상 코딩 (emerald: staged, amber: modified, red: deleted/conflict).
+- **GitPanel (사이드바 하단 Source Control 패널)**:
+  - **Changes 탭**: Staged / Unstaged 파일 목록, 개별 및 전체 Stage/Unstage, 변경 Discard.
+  - **커밋 입력**: 메시지 작성 후 버튼 클릭 또는 `Ctrl+Enter`로 즉시 커밋.
+  - **Log 탭**: 최근 50개 커밋 이력 (short ID, 요약, 작성자, 상대 시간).
+- **컨텍스트 메뉴 Git 액션**: 파일 우클릭 시 Stage File / Unstage File / Discard Changes 제공.
+- **5초 자동 갱신**: Git 상태를 주기적으로 폴링하여 외부 변경사항 자동 반영.
+
+### 4. AI 분석 & 원클릭 컨텍스트 복사
 - **🪙 네이티브 BPE 토큰 수 계산**: Rust `tiktoken-rs` 기반 OpenAI `cl100k_base` 토큰 수, 단어 수, 줄 수, 파일 크기 통계 실시간 산출.
 - **📋 [Copy for LLM] 원클릭 복사**: 파일 메타데이터(크기, 토큰, 줄 수)와 본문 서식(```lang ... ```)을 AI 프롬프트 입력용 포맷으로 클립보드에 즉시 복사.
 
-### 4. 🟢 실시간 파일 감지 (Hot-Reload)
+### 5. 🟢 실시간 파일 감지 (Hot-Reload)
 - Rust `notify-debouncer-mini` 기반 실시간 파일 시스템 감시.
 - AI 코딩 어시스턴트(Claude Code, Cursor, Aider, OMP 등)가 디스크의 파일을 생성/수정하는 즉시 뷰어가 자동 갱신됩니다.
 
@@ -81,12 +94,13 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
 - **`notify-debouncer-mini`**: 실시간 파일 시스템 변경 감시 및 이벤트 디바운스
 - **`trash`**: OS 안전 휴지통 삭제
 - **`open`**: 시스템 기본 프로그램 실행
+- **`git2`**: libgit2 기반 네이티브 Git 통합 (상태, 스테이징, 커밋, 디프, 로그)
 - **`serde` / `serde_json`**: 직렬화 및 IPC 통신
 
 ### Frontend (React 19 & Vite)
 - **React 19**, **TypeScript 5.9**, **Vite 6**
 - **Tailwind CSS 3.4**: 모던 다크 테마 및 반응형 레이아웃
-- **`zustand`**: 파일 트리, 뷰어 상태, 클립보드, 토스트 전역 상태 관리
+- **`zustand`**: 파일 트리, 뷰어 상태, 클립보드, 토스트, Git 상태 전역 관리
 - **`@monaco-editor/react`**: VS Code 엔진 기반 코드 뷰어/에디터
 - **`react-markdown`**, **`remark-gfm`**, **`remark-math`**, **`rehype-katex`**, **`rehype-raw`**: 마크다운 렌더링
 - **`mermaid`**: 차트/다이어그램 실시간 렌더링
@@ -112,7 +126,8 @@ pfile/
 │           ├── fs_ops.rs      # 파일 CRUD, 휴지통 삭제, 디렉토리 리스팅
 │           ├── tokens.rs      # tiktoken-rs 기반 토큰 및 통계 계산
 │           ├── watcher.rs     # notify 기반 실시간 파일 감시
-│           └── system.rs      # 탐색기 열기, 기본 앱 실행
+│           ├── system.rs      # 탐색기 열기, 기본 앱 실행
+│           └── git.rs         # git2 기반 Git 상태, 스테이징, 커밋, 디프, 로그
 ├── src/                       # React 19 프론트엔드
 │   ├── main.tsx
 │   ├── App.tsx                # 레이아웃 통합 및 훅 바인딩
@@ -124,7 +139,8 @@ pfile/
 │   │   ├── useFileStore.ts    # 파일 트리, 즐겨찾기, 필터 상태
 │   │   ├── useViewerStore.ts  # 뷰어 모드, Diff, 줌, 뷰포트 상태
 │   │   ├── useClipboardStore.ts # 파일 복사/잘라내기 버퍼
-│   │   └── useToastStore.ts   # 알림 토스트
+│   │   ├── useToastStore.ts   # 알림 토스트
+│   │   └── useGitStore.ts     # Git 저장소 상태, 스테이징, 커밋, 로그 관리
 │   ├── hooks/
 │   │   ├── useFileContent.ts  # 파일 텍스트/바이너리 로드 & 캐싱
 │   │   ├── useFileWatcher.ts  # 백엔드 Watcher 이벤트 구독 & 자동 갱신
@@ -136,11 +152,12 @@ pfile/
 │   │   │   ├── SplitLayout.tsx# 좌우 2패널 리사이저블 스플릿
 │   │   │   └── StatusBar.tsx  # 하단 실시간 Watcher 상태바
 │   │   ├── sidebar/
-│   │   │   ├── Sidebar.tsx    # 사이드바 컨테이너
+│   │   │   ├── Sidebar.tsx    # 사이드바 컨테이너 (Explorer + Git 패널)
 │   │   │   ├── Favorites.tsx  # 즐겨찾는 작업 폴더
 │   │   │   ├── FileTree.tsx   # 파일 목록 및 모달 관리
-│   │   │   ├── FileTreeNode.tsx # 개별 노드 (아이콘, 인라인 수정, 드래그앤드롭)
-│   │   │   └── ContextMenu.tsx# 우클릭 컨텍스트 메뉴
+│   │   │   ├── FileTreeNode.tsx # 개별 노드 (아이콘, Git 상태 배지, 인라인 수정, D&D)
+│   │   │   ├── ContextMenu.tsx# 우클릭 컨텍스트 메뉴 (Git 액션 포함)
+│   │   │   └── GitPanel.tsx   # Git Source Control 패널 (Changes/Log 탭)
 │   │   ├── viewer/
 │   │   │   ├── ViewerContainer.tsx # 카테고리별 뷰어 라우팅
 │   │   │   ├── ViewerHeader.tsx    # 토큰 통계, LLM 복사, Diff 버튼

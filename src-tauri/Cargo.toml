@@ -29,3 +29,4 @@ chrono = "0.4"
 open = "5"
 base64 = "0.22"
 tokio = { version = "1", features = ["sync", "rt", "time"] }
+git2 = "0.19"

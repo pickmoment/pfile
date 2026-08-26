@@ -74,3 +74,46 @@ export interface QuickPathItem {
   path: string;
   kind: string;
 }
+
+// ── Git Types ───────────────────────────────────────────────────
+
+export type GitFileStatusKind =
+  | 'modified'
+  | 'added'
+  | 'deleted'
+  | 'renamed'
+  | 'typechange'
+  | 'untracked'
+  | 'ignored'
+  | 'conflicted';
+
+export interface GitFileStatus {
+  path: string;
+  abs_path: string;
+  index_status: GitFileStatusKind | null;
+  worktree_status: GitFileStatusKind | null;
+}
+
+export interface GitRepoInfo {
+  is_repo: boolean;
+  repo_root: string | null;
+  branch: string | null;
+  is_detached: boolean;
+  ahead: number;
+  behind: number;
+  files: GitFileStatus[];
+  staged_count: number;
+  modified_count: number;
+  untracked_count: number;
+  conflicted_count: number;
+}
+
+export interface GitLogEntry {
+  id: string;
+  short_id: string;
+  summary: string;
+  author: string;
+  email: string;
+  timestamp: number;
+  relative_time: string;
+}

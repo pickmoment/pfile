@@ -29,6 +29,15 @@ pub fn run() {
             commands::system::get_home_dir,
             commands::system::get_quick_access_paths,
             commands::system::search_files_recursive,
+            commands::git::git_repo_info,
+            commands::git::git_stage,
+            commands::git::git_unstage,
+            commands::git::git_commit,
+            commands::git::git_discard,
+            commands::git::git_diff,
+            commands::git::git_log,
+            commands::git::git_stage_all,
+            commands::git::git_unstage_all,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

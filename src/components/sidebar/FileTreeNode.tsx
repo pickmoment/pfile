@@ -6,6 +6,7 @@ import { getFileIcon } from '../../utils/fileIcons';
 import { formatBytes } from '../../utils/formatters';
 import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useGitStore } from '../../store/useGitStore';
 
 interface FileTreeNodeProps {
   file: FileMetadata;
@@ -32,6 +33,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   const categoryFilter = useFileStore((s) => s.categoryFilter);
   const showHiddenFiles = useFileStore((s) => s.showHiddenFiles);
   const showToast = useToastStore((s) => s.showToast);
+  const gitFileStatus = useGitStore((s) => s.files.find((f) => f.abs_path === file.path));
 
   const [isInlineRenaming, setIsInlineRenaming] = useState(false);
   const [inlineName, setInlineName] = useState(file.name);
@@ -226,6 +228,29 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
             </span>
           )}
         </div>
+
+        {/* Git Status Indicator — always visible */}
+        {gitFileStatus && (
+          <span
+            className={`flex-shrink-0 font-mono font-bold text-[9px] px-1 rounded ${
+              gitFileStatus.worktree_status === 'conflicted' ? 'text-red-400 bg-red-900/30' :
+              gitFileStatus.index_status ? 'text-emerald-400 bg-emerald-900/20' :
+              gitFileStatus.worktree_status === 'untracked' ? 'text-[var(--tx5)] bg-[var(--s7)]' :
+              gitFileStatus.worktree_status === 'deleted' ? 'text-red-400 bg-red-900/20' :
+              'text-amber-400 bg-amber-900/20'
+            }`}
+            title={`Index: ${gitFileStatus.index_status ?? '—'}  Work: ${gitFileStatus.worktree_status ?? '—'}`}
+          >
+            {gitFileStatus.worktree_status === 'conflicted' ? 'C' :
+             gitFileStatus.worktree_status === 'untracked' ? '?' :
+             gitFileStatus.worktree_status === 'deleted' ? 'D' :
+             gitFileStatus.worktree_status === 'modified' ? 'M' :
+             gitFileStatus.index_status === 'added' ? 'A' :
+             gitFileStatus.index_status === 'modified' ? 'M' :
+             gitFileStatus.index_status === 'deleted' ? 'D' :
+             gitFileStatus.index_status === 'renamed' ? 'R' : '·'}
+          </span>
+        )}
 
         {/* Right Side: Size & Hover Action Buttons */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

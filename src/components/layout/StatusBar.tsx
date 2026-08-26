@@ -1,12 +1,22 @@
 import React from 'react';
-import { Radio, CheckCircle, FileText } from 'lucide-react';
+import { Radio, CheckCircle, FileText, GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
 import { useFileStore } from '../../store/useFileStore';
+import { useGitStore } from '../../store/useGitStore';
 import { formatBytes } from '../../utils/formatters';
 
 export const StatusBar: React.FC = () => {
   const watcherActive = useFileStore((s) => s.watcherActive);
   const selectedFile = useFileStore((s) => s.selectedFile);
   const files = useFileStore((s) => s.files);
+  const isRepo = useGitStore((s) => s.isRepo);
+  const branch = useGitStore((s) => s.branch);
+  const isDetached = useGitStore((s) => s.isDetached);
+  const ahead = useGitStore((s) => s.ahead);
+  const behind = useGitStore((s) => s.behind);
+  const modifiedCount = useGitStore((s) => s.modifiedCount);
+  const stagedCount = useGitStore((s) => s.stagedCount);
+  const setGitPanelOpen = useGitStore((s) => s.setGitPanelOpen);
+  const gitPanelOpen = useGitStore((s) => s.gitPanelOpen);
 
   return (
     <footer className="h-6 bg-[var(--s3)] border-t border-[var(--bd2)] px-3 flex items-center justify-between text-[11px] text-[var(--tx4)] font-mono select-none">
@@ -58,8 +68,30 @@ export const StatusBar: React.FC = () => {
         <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+⇧+F</kbd> Focus</span>
       </div>
 
-      {/* Right: Encoding and Format */}
+      {/* Right: Git + Encoding */}
       <div className="flex items-center gap-3">
+        {isRepo && (
+          <>
+            <button
+              onClick={() => setGitPanelOpen(!gitPanelOpen)}
+              className="flex items-center gap-1 text-[var(--tx3)] hover:text-[var(--tx1)] transition-colors"
+              title="Toggle Source Control"
+            >
+              <GitBranch className="w-3 h-3 text-orange-400" />
+              <span className={isDetached ? 'text-amber-400' : ''}>
+                {isDetached ? `@${branch}` : branch ?? '—'}
+              </span>
+              {ahead > 0 && <span className="flex items-center text-[10px] text-[var(--tx5)]"><ArrowUp className="w-2.5 h-2.5" />{ahead}</span>}
+              {behind > 0 && <span className="flex items-center text-[10px] text-[var(--tx5)]"><ArrowDown className="w-2.5 h-2.5" />{behind}</span>}
+              {(modifiedCount > 0 || stagedCount > 0) && (
+                <span className="text-[10px] text-amber-400">
+                  {modifiedCount > 0 ? `${modifiedCount}±` : ''}{stagedCount > 0 ? ` ${stagedCount}✓` : ''}
+                </span>
+              )}
+            </button>
+            <span className="text-[var(--tx7)]">|</span>
+          </>
+        )}
         <span className="text-[var(--tx4)]">UTF-8</span>
         <span className="text-[var(--tx7)]">|</span>
         <span className="flex items-center gap-1 text-[var(--tx4)]">
