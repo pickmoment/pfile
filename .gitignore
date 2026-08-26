@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Frontend Build
+dist/
+dist-ssr/
+*.local
+
+# Rust & Tauri Build
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun.lockb
+*.log
+
+# Editor & OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,27 @@
+{
+  "project": "pfile-explorer",
+  "version": "0.1.0",
+  "aiEngine": {
+    "provider": "Anthropic & OpenAI",
+    "supportedEncodings": ["cl100k_base", "o200k_base", "p50k_base"],
+    "benchmarks": {
+      "avgLatencyMs": 14.2,
+      "cacheHitRatio": 0.89,
+      "maxTokensPerDoc": 128000
+    },
+    "features": {
+      "liveHotReload": true,
+      "bpeTokenCounting": true,
+      "katexRendering": true,
+      "mermaidDiagrams": true,
+      "monacoDiffEditor": true
+    }
+  },
+  "supportedCategories": [
+    { "name": "markdown", "extensions": ["md", "markdown", "mdx"], "viewer": "MarkdownViewer" },
+    { "name": "html", "extensions": ["html", "htm"], "viewer": "HtmlSandbox" },
+    { "name": "code", "extensions": ["ts", "tsx", "js", "rs", "py"], "viewer": "CodeViewer" },
+    { "name": "data", "extensions": ["json", "yaml", "csv"], "viewer": "DataViewer" },
+    { "name": "media", "extensions": ["png", "jpg", "svg", "mp3", "mp4"], "viewer": "MediaViewer" }
+  ]
+}

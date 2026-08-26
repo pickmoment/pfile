@@ -1,0 +1,6 @@
+model_name,context_window,tokens_per_sec,cost_per_1m_input,cost_per_1m_output,reasoning_grade
+GPT-4o,128000,105.4,$2.50,$10.00,A+
+Claude 3.5 Sonnet,200000,98.2,$3.00,$15.00,A+
+DeepSeek V3,64000,124.8,$0.27,$1.10,A
+o1-preview,128000,42.5,$15.00,$60.00,S
+Gemini 1.5 Pro,2000000,84.1,$1.25,$5.00,A

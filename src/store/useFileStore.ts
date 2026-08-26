@@ -1,0 +1,321 @@
+import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
+import { FileFilterCategory, FileMetadata, QuickPathItem } from '../types/file';
+
+interface FileStore {
+  currentDirectory: string;
+  files: FileMetadata[];
+  selectedFile: FileMetadata | null;
+  selectedPaths: string[];
+  expandedDirs: Set<string>;
+  dirCache: Record<string, FileMetadata[]>;
+  favorites: string[];
+  recentDirectories: string[];
+  quickPaths: QuickPathItem[];
+  searchQuery: string;
+  categoryFilter: FileFilterCategory;
+  isLoading: boolean;
+  watcherActive: boolean;
+  isQuickJumpOpen: boolean;
+  isAddressBarEditing: boolean;
+  showHiddenFiles: boolean;
+  // Navigation History
+  history: string[];
+  historyIndex: number;
+  canGoBack: boolean;
+  canGoForward: boolean;
+
+  setCurrentDirectory: (dir: string, pushHistory?: boolean) => Promise<void>;
+  refreshDirectory: () => Promise<void>;
+  setSelectedFile: (file: FileMetadata | null) => void;
+  setSelectedPaths: (paths: string[]) => void;
+  toggleDirExpanded: (dirPath: string) => Promise<void>;
+  addFavorite: (path: string) => void;
+  removeFavorite: (path: string) => void;
+  setSearchQuery: (query: string) => void;
+  setCategoryFilter: (category: FileFilterCategory) => void;
+  setWatcherActive: (active: boolean) => void;
+  setQuickJumpOpen: (open: boolean) => void;
+  setIsAddressBarEditing: (editing: boolean) => void;
+  goBack: () => Promise<void>;
+  goForward: () => Promise<void>;
+  goUp: () => Promise<void>;
+  jumpToPath: (path: string) => Promise<void>;
+  loadQuickPaths: () => Promise<void>;
+  toggleShowHiddenFiles: () => void;
+  setShowHiddenFiles: (show: boolean) => void;
+  initWorkspace: () => Promise<void>;
+}
+
+const HIDDEN_KEY = 'pfile_show_hidden';
+
+const FAVORITES_KEY = 'pfile_favorites';
+const RECENT_KEY = 'pfile_recent_dirs';
+
+function getStored(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStored(key: string, list: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+export const useFileStore = create<FileStore>((set, get) => ({
+  currentDirectory: '',
+  files: [],
+  selectedFile: null,
+  selectedPaths: [],
+  expandedDirs: new Set<string>(),
+  dirCache: {},
+  favorites: getStored(FAVORITES_KEY),
+  recentDirectories: getStored(RECENT_KEY),
+  quickPaths: [],
+  searchQuery: '',
+  categoryFilter: 'ALL',
+  isLoading: false,
+  watcherActive: false,
+  isQuickJumpOpen: false,
+  isAddressBarEditing: false,
+  showHiddenFiles: localStorage.getItem(HIDDEN_KEY) === 'true',
+  history: [],
+  historyIndex: -1,
+  canGoBack: false,
+  canGoForward: false,
+
+  initWorkspace: async () => {
+    try {
+      await get().loadQuickPaths();
+      const home: string = await invoke('get_home_dir');
+      await get().setCurrentDirectory(home);
+    } catch {
+      await get().setCurrentDirectory('.');
+    }
+  },
+
+  loadQuickPaths: async () => {
+    try {
+      const items: QuickPathItem[] = await invoke('get_quick_access_paths');
+      set({ quickPaths: items });
+    } catch (err) {
+      console.warn('Failed to load quick paths:', err);
+    }
+  },
+
+  setCurrentDirectory: async (dir: string, pushHistory = true) => {
+    const normalized = dir.replace(/\\/g, '/').replace(/\/+$/, '') || '/';
+    set({ isLoading: true });
+
+    try {
+      const items: FileMetadata[] = await invoke('list_directory', { path: normalized });
+
+      try {
+        await invoke('start_watch', { path: normalized });
+        set({ watcherActive: true });
+      } catch (err) {
+        console.warn('Could not start watcher for directory:', err);
+      }
+
+      // Update recent directories
+      const currentRecents = get().recentDirectories.filter((p) => p !== normalized);
+      const newRecents = [normalized, ...currentRecents].slice(0, 15);
+      saveStored(RECENT_KEY, newRecents);
+
+      // Update history stack
+      let newHistory = get().history;
+      let newIndex = get().historyIndex;
+
+      if (pushHistory) {
+        if (newIndex < newHistory.length - 1) {
+          newHistory = newHistory.slice(0, newIndex + 1);
+        }
+        if (newHistory[newHistory.length - 1] !== normalized) {
+          newHistory = [...newHistory, normalized];
+          newIndex = newHistory.length - 1;
+        }
+      }
+
+      set((state) => {
+        const newCache = { ...state.dirCache, [normalized]: items };
+        const newExpanded = new Set(state.expandedDirs);
+        newExpanded.add(normalized);
+
+        return {
+          currentDirectory: normalized,
+          files: items,
+          dirCache: newCache,
+          expandedDirs: newExpanded,
+          recentDirectories: newRecents,
+          history: newHistory,
+          historyIndex: newIndex,
+          canGoBack: newIndex > 0,
+          canGoForward: newIndex < newHistory.length - 1,
+          isLoading: false,
+          isAddressBarEditing: false,
+        };
+      });
+    } catch (err) {
+      console.error('Failed to load directory:', err);
+      set({ isLoading: false });
+      throw err;
+    }
+  },
+
+  refreshDirectory: async () => {
+    const { currentDirectory, expandedDirs } = get();
+    if (!currentDirectory) return;
+
+    try {
+      const items: FileMetadata[] = await invoke('list_directory', { path: currentDirectory });
+      const newCache: Record<string, FileMetadata[]> = { [currentDirectory]: items };
+
+      for (const dir of expandedDirs) {
+        if (dir !== currentDirectory) {
+          try {
+            const childItems: FileMetadata[] = await invoke('list_directory', { path: dir });
+            newCache[dir] = childItems;
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      set((state) => {
+        let updatedSelected = state.selectedFile;
+        if (updatedSelected) {
+          const allLoaded = Object.values(newCache).flat();
+          const match = allLoaded.find((f) => f.path === updatedSelected?.path);
+          if (match) {
+            updatedSelected = match;
+          }
+        }
+
+        return {
+          files: items,
+          dirCache: { ...state.dirCache, ...newCache },
+          selectedFile: updatedSelected,
+        };
+      });
+    } catch (err) {
+      console.error('Failed to refresh directory:', err);
+    }
+  },
+
+  goBack: async () => {
+    const { history, historyIndex } = get();
+    if (historyIndex > 0) {
+      const prevDir = history[historyIndex - 1];
+      set({ historyIndex: historyIndex - 1 });
+      await get().setCurrentDirectory(prevDir, false);
+    }
+  },
+
+  goForward: async () => {
+    const { history, historyIndex } = get();
+    if (historyIndex < history.length - 1) {
+      const nextDir = history[historyIndex + 1];
+      set({ historyIndex: historyIndex + 1 });
+      await get().setCurrentDirectory(nextDir, false);
+    }
+  },
+
+  goUp: async () => {
+    const { currentDirectory } = get();
+    if (!currentDirectory) return;
+
+    const parts = currentDirectory.split('/').filter(Boolean);
+    if (parts.length > 1) {
+      let parent = '';
+      if (currentDirectory.includes(':')) {
+        parent = parts.slice(0, -1).join('/');
+        if (parent.endsWith(':')) parent += '/';
+      } else {
+        parent = '/' + parts.slice(0, -1).join('/');
+      }
+      await get().setCurrentDirectory(parent);
+    }
+  },
+
+  jumpToPath: async (targetPath: string) => {
+    const normalized = targetPath.replace(/\\/g, '/').replace(/\/+$/, '') || '/';
+    await get().setCurrentDirectory(normalized);
+  },
+
+  setSelectedFile: (file) => {
+    set({
+      selectedFile: file,
+      selectedPaths: file ? [file.path] : [],
+    });
+  },
+
+  setSelectedPaths: (paths) => {
+    set({ selectedPaths: paths });
+  },
+
+  toggleDirExpanded: async (dirPath: string) => {
+    const { expandedDirs, dirCache } = get();
+    const nextExpanded = new Set(expandedDirs);
+
+    if (nextExpanded.has(dirPath)) {
+      nextExpanded.delete(dirPath);
+      set({ expandedDirs: nextExpanded });
+    } else {
+      nextExpanded.add(dirPath);
+      set({ expandedDirs: nextExpanded });
+
+      if (!dirCache[dirPath]) {
+        try {
+          const items: FileMetadata[] = await invoke('list_directory', { path: dirPath });
+          set((state) => ({
+            dirCache: { ...state.dirCache, [dirPath]: items },
+          }));
+        } catch (err) {
+          console.error(`Failed to load child directory ${dirPath}:`, err);
+        }
+      }
+    }
+  },
+
+  addFavorite: (path) => {
+    const { favorites } = get();
+    if (!favorites.includes(path)) {
+      const updated = [...favorites, path];
+      saveStored(FAVORITES_KEY, updated);
+      set({ favorites: updated });
+    }
+  },
+
+  removeFavorite: (path) => {
+    const { favorites } = get();
+    const updated = favorites.filter((f) => f !== path);
+    saveStored(FAVORITES_KEY, updated);
+    set({ favorites: updated });
+  },
+
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setCategoryFilter: (category) => set({ categoryFilter: category }),
+  toggleShowHiddenFiles: () => {
+    const next = !get().showHiddenFiles;
+    try {
+      localStorage.setItem(HIDDEN_KEY, String(next));
+    } catch {}
+    set({ showHiddenFiles: next });
+  },
+  setShowHiddenFiles: (show) => {
+    try {
+      localStorage.setItem(HIDDEN_KEY, String(show));
+    } catch {}
+    set({ showHiddenFiles: show });
+  },
+  setWatcherActive: (active) => set({ watcherActive: active }),
+  setQuickJumpOpen: (open) => set({ isQuickJumpOpen: open }),
+  setIsAddressBarEditing: (editing) => set({ isAddressBarEditing: editing }),
+}));

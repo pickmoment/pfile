@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="file" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <path d="M160 110 H300 L370 180 V402 H160 Z" fill="url(#file)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.25))"/>
+  <path d="M300 110 V180 H370 Z" fill="#cbd5e1"/>
+  <!-- AI sparkle icon -->
+  <path d="M256 220 L266 250 L296 260 L266 270 L256 300 L246 270 L216 260 L246 250 Z" fill="#6366f1"/>
+  <path d="M310 290 L315 305 L330 310 L315 315 L310 330 L305 315 L290 310 L305 305 Z" fill="#8b5cf6"/>
+  <path d="M210 320 L214 332 L226 336 L214 340 L210 352 L206 340 L194 336 L206 332 Z" fill="#3b82f6"/>
+</svg>
