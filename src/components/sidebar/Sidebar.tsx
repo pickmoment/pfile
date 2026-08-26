@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* File Tree List — shrinks when git panel is open */}
-      <div className={`${isRepo && gitPanelOpen ? 'flex-1 min-h-0 max-h-[50%]' : 'flex-1 min-h-0'} overflow-hidden`}>
+      <div className={`${isRepo && gitPanelOpen ? 'flex-1 min-h-0 max-h-[50%]' : 'flex-1 min-h-0'} overflow-hidden flex flex-col`}>
         <FileTree />
       </div>
 

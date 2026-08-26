@@ -83,7 +83,7 @@ export const FileTree: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-1 py-1 space-y-0.5 no-scrollbar select-none">
+    <div className="flex-1 min-h-0 overflow-y-auto px-1 py-1 space-y-0.5 select-none">
       {filteredFiles.length === 0 ? (
         <div className="p-6 text-center text-[var(--tx5)] text-xs">
           {searchQuery || categoryFilter !== 'ALL'
