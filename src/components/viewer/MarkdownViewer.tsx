@@ -265,6 +265,33 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex, rehypeRaw]}
                 components={{
+                  ul: ({ node: _node, className, children, ...props }) => {
+                    const isTaskList = className?.includes('contains-task-list');
+                    return (
+                      <ul
+                        className={`${isTaskList ? 'list-none pl-1' : 'list-disc pl-6'} my-3 space-y-1 text-[var(--tx3)] marker:text-[var(--tx4)] ${className || ''}`}
+                        {...props}
+                      >
+                        {children}
+                      </ul>
+                    );
+                  },
+                  ol: ({ node: _node, className, children, ...props }) => (
+                    <ol
+                      className={`list-decimal pl-6 my-3 space-y-1 text-[var(--tx3)] marker:text-[var(--tx4)] ${className || ''}`}
+                      {...props}
+                    >
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ node: _node, className, children, ...props }) => (
+                    <li
+                      className={`pl-1 leading-relaxed text-[var(--tx3)] [&>p]:my-0 [&>input]:mr-2 ${className || ''}`}
+                      {...props}
+                    >
+                      {children}
+                    </li>
+                  ),
                   table: ({ children }) => (
                     <table className="w-full border-collapse border border-[var(--bd1)] my-4">
                       {children}
