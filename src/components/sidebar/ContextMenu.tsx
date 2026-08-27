@@ -8,6 +8,7 @@ import {
   Trash2,
   ExternalLink,
   FolderSearch,
+  FolderOpen,
   Star,
   StarOff,
   Link,
@@ -41,6 +42,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const refreshDirectory = useFileStore((s) => s.refreshDirectory);
+  const setCurrentDirectory = useFileStore((s) => s.setCurrentDirectory);
   const favorites = useFileStore((s) => s.favorites);
   const addFavorite = useFileStore((s) => s.addFavorite);
   const removeFavorite = useFileStore((s) => s.removeFavorite);
@@ -80,7 +82,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   // Adjust positioning if near window borders
   const menuWidth = 200;
-  const menuHeight = 320;
+  const menuHeight = file.is_dir ? 360 : 320;
   const adjustedX = Math.min(x, window.innerWidth - menuWidth - 10);
   const adjustedY = Math.min(y, window.innerHeight - menuHeight - 10);
 
@@ -97,6 +99,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     }
     navigator.clipboard.writeText(rel);
     showToast('Copied Relative Path', rel, 'info');
+    onClose();
+  };
+
+  const handleNavigateToFolder = async () => {
+    if (!file.is_dir) return;
+    try {
+      await setCurrentDirectory(file.path);
+      showToast('Opened Folder', file.path, 'info');
+    } catch (err: unknown) {
+      const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Failed to open folder';
+      showToast('Error', msg, 'error');
+    }
     onClose();
   };
 
@@ -175,6 +189,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
       {/* System actions */}
       <div className="py-1">
+        {file.is_dir && (
+          <button
+            onClick={handleNavigateToFolder}
+            className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--info-bg)] hover:text-[var(--info-text)] text-left transition-colors"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-sky-400" />
+            <span>Open Folder</span>
+          </button>
+        )}
         <button
           onClick={handleShowInExplorer}
           className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-[var(--s7)] text-left transition-colors"
