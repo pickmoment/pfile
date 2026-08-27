@@ -20,6 +20,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 }) => {
   const diffMode = useViewerStore((s) => s.diffMode);
   const setDiffMode = useViewerStore((s) => s.setDiffMode);
+  const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
 
   const [targetContent, setTargetContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -135,21 +136,21 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           Calculating diff...
         </div>
       ) : diffMode === 'side-by-side' ? (
-        <SideBySideDiff originalContent={originalContent} targetContent={targetContent} />
+        <SideBySideDiff originalContent={originalContent} targetContent={targetContent} fontSize={11.5 * viewerFontScale / 100} />
       ) : (
-        <InlineDiff changes={changes} />
+        <InlineDiff changes={changes} fontSize={11.5 * viewerFontScale / 100} />
       )}
     </div>
   );
 };
 
 // Inline Unified Diff
-const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
+const InlineDiff: React.FC<{ changes: Change[]; fontSize: number }> = ({ changes, fontSize }) => {
   let origLine = 1;
   let targetLine = 1;
 
   return (
-    <div className="flex-1 overflow-auto font-mono text-xs p-2 leading-relaxed">
+    <div style={{ fontSize }} className="flex-1 overflow-auto font-mono p-2 leading-relaxed">
       {changes.map((change, cIdx) => {
         const lines = change.value.replace(/\n$/, '').split('\n');
 
@@ -185,7 +186,7 @@ const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
               <div className="w-5 text-center font-bold select-none text-[11px] flex-shrink-0">
                 {sign}
               </div>
-              <pre className="flex-1 whitespace-pre-wrap break-all font-mono text-[11.5px] overflow-hidden">
+              <pre className="flex-1 whitespace-pre-wrap break-all font-mono overflow-hidden">
                 {line || ' '}
               </pre>
             </div>
@@ -197,16 +198,17 @@ const InlineDiff: React.FC<{ changes: Change[] }> = ({ changes }) => {
 };
 
 // Side by Side Diff
-const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string }> = ({
+const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string; fontSize: number }> = ({
   originalContent,
   targetContent,
+  fontSize,
 }) => {
   const origLines = originalContent.split('\n');
   const targetLines = targetContent.split('\n');
   const maxLines = Math.max(origLines.length, targetLines.length);
 
   return (
-    <div className="flex-1 flex overflow-hidden font-mono text-xs">
+    <div style={{ fontSize }} className="flex-1 flex overflow-hidden font-mono">
       {/* Left (Original) */}
       <div className="w-1/2 h-full border-r border-[var(--bd2)] flex flex-col overflow-hidden">
         <div className="px-3 py-1 bg-[var(--s3)] border-b border-[var(--bd2)] text-[11px] text-[var(--tx4)] font-semibold select-none">
@@ -231,7 +233,7 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                 <span className="w-8 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0">
                   {line !== undefined ? i + 1 : ''}
                 </span>
-                <pre className="flex-1 whitespace-pre-wrap break-all text-[11.5px]">
+                <pre className="flex-1 whitespace-pre-wrap break-all">
                   {line ?? ''}
                 </pre>
               </div>
@@ -264,7 +266,7 @@ const SideBySideDiff: React.FC<{ originalContent: string; targetContent: string 
                 <span className="w-8 text-right pr-2 text-[10.5px] text-[var(--tx6)] select-none flex-shrink-0">
                   {line !== undefined ? i + 1 : ''}
                 </span>
-                <pre className="flex-1 whitespace-pre-wrap break-all text-[11.5px]">
+                <pre className="flex-1 whitespace-pre-wrap break-all">
                   {line ?? ''}
                 </pre>
               </div>

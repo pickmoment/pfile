@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { CodeViewer } from './CodeViewer';
 import { useToastStore } from '../../store/useToastStore';
+import { useViewerStore } from '../../store/useViewerStore';
 
 interface DataViewerProps {
   filePath: string;
@@ -45,7 +46,7 @@ const JsonTreeNode: React.FC<{
     const count = entries.length;
 
     return (
-      <div className="font-mono text-xs select-text">
+      <div className="font-mono select-text">
         <div
           onClick={() => setIsOpen(!isOpen)}
           style={{ paddingLeft: `${depth * 14}px` }}
@@ -114,7 +115,7 @@ const JsonTreeNode: React.FC<{
   return (
     <div
       style={{ paddingLeft: `${depth * 14 + 16}px` }}
-      className="flex items-center gap-1.5 py-0.5 hover:bg-[var(--s7)] rounded font-mono text-xs group select-text"
+      className="flex items-center gap-1.5 py-0.5 hover:bg-[var(--s7)] rounded font-mono group select-text"
     >
       {keyName !== undefined && (
         <span className="text-indigo-300 font-semibold">{keyName}: </span>
@@ -132,9 +133,10 @@ const JsonTreeNode: React.FC<{
 };
 
 // CSV / TSV Table View
-const CsvTableView: React.FC<{ content: string; delimiter?: string }> = ({
+const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: number }> = ({
   content,
   delimiter = ',',
+  fontSize,
 }) => {
   const [filter, setFilter] = useState('');
 
@@ -197,7 +199,7 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string }> = ({
 
       {/* Table Body */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left border-collapse text-xs font-mono">
+        <table style={{ fontSize }} className="w-full text-left border-collapse font-mono">
           <thead className="bg-[var(--s5)] sticky top-0 z-10 border-b border-[var(--bd1)]">
             <tr>
               <th className="p-2.5 text-[11px] text-[var(--tx5)] font-semibold w-12 border-r border-[var(--bd2)]">
@@ -236,6 +238,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
   onChange,
   isEditing = false,
 }) => {
+  const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
   const [viewMode, setViewMode] = useState<'tree' | 'table' | 'raw'>('tree');
   const [search, setSearch] = useState('');
 
@@ -257,7 +260,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
   if ((isCsv || isTsv) && viewMode !== 'raw') {
     return (
       <div className="w-full h-full flex flex-col">
-        <CsvTableView content={content} delimiter={isTsv ? '\t' : ','} />
+        <CsvTableView content={content} delimiter={isTsv ? '\t' : ','} fontSize={12 * viewerFontScale / 100} />
       </div>
     );
   }
@@ -300,7 +303,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
         </div>
 
         {/* Tree Container */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div style={{ fontSize: 12 * viewerFontScale / 100 }} className="flex-1 p-6 overflow-auto">
           <JsonTreeNode value={parsedJson} search={search} />
         </div>
       </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { WrapText, MapPin } from 'lucide-react';
 import { getLanguageFromPath } from '../../utils/formatters';
+import { useViewerStore } from '../../store/useViewerStore';
+import { useThemeStore } from '../../store/useThemeStore';
 
 interface CodeViewerProps {
   filePath: string;
@@ -18,6 +20,8 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   isEditing = false,
   onSave,
 }) => {
+  const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
+  const theme = useThemeStore((s) => s.theme);
   const language = getLanguageFromPath(filePath);
   const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
   const [minimapEnabled, setMinimapEnabled] = useState(false);
@@ -74,13 +78,13 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
         <Editor
           height="100%"
           language={language}
-          theme="vs-dark"
+          theme={theme === 'light' ? 'vs' : 'vs-dark'}
           value={content}
           onChange={(val) => onChange?.(val || '')}
           options={{
             readOnly: !isEditing,
             minimap: { enabled: minimapEnabled },
-            fontSize: 13,
+            fontSize: 13 * viewerFontScale / 100,
             fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
             wordWrap,
             lineNumbers: 'on',

@@ -10,6 +10,7 @@ import Editor from '@monaco-editor/react';
 import { Copy, Check, ListTree, ChevronRight } from 'lucide-react';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useThemeStore } from '../../store/useThemeStore';
 
 // Initialize mermaid once
 mermaid.initialize({
@@ -114,7 +115,8 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
 const CodeBlock: React.FC<{
   language?: string;
   value: string;
-}> = ({ language, value }) => {
+  fontSize: number;
+}> = ({ language, value, fontSize }) => {
   const [copied, setCopied] = useState(false);
   const showToast = useToastStore((s) => s.showToast);
 
@@ -141,17 +143,18 @@ const CodeBlock: React.FC<{
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
-      <pre className="p-3.5 text-xs text-[var(--tx2)] font-mono overflow-x-auto leading-relaxed">
+      <pre style={{ fontSize }} className="p-3.5 text-[var(--tx2)] font-mono overflow-x-auto leading-relaxed">
         <code>{value}</code>
       </pre>
     </div>
   );
 };
 
-const FrontmatterTable: React.FC<{ entries: Array<[string, unknown]> }> = ({ entries }) => (
+const FrontmatterTable: React.FC<{ entries: Array<[string, unknown]>; fontSize: number }> = ({ entries, fontSize }) => (
   <section
     aria-label="Frontmatter"
     className="mb-5 inline-block min-w-72 max-w-full overflow-hidden rounded-md border border-[var(--bd2)] bg-[var(--s3)] align-top text-[11px]"
+    style={{ fontSize }}
   >
     <div className="border-b border-[var(--bd2)] bg-[var(--s5)] px-2.5 py-1 font-semibold uppercase tracking-wider text-[10px] text-[var(--tx5)]">
       Frontmatter
@@ -183,6 +186,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const viewerMode = useViewerStore((s) => s.viewerMode);
   const showToc = useViewerStore((s) => s.showToc);
   const toggleToc = useViewerStore((s) => s.toggleToc);
+  const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
+  const theme = useThemeStore((s) => s.theme);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
   const parsedMarkdown = useMemo(() => parseFrontmatter(content), [content]);
@@ -229,13 +234,13 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             <Editor
               height="100%"
               defaultLanguage="markdown"
-              theme="vs-dark"
+              theme={theme === 'light' ? 'vs' : 'vs-dark'}
               value={content}
               onChange={(val) => onChange?.(val || '')}
               options={{
                 readOnly: !onChange,
                 minimap: { enabled: false },
-                fontSize: 13,
+                fontSize: 13 * viewerFontScale / 100,
                 fontFamily: 'Fira Code, Consolas, monospace',
                 wordWrap: 'on',
                 lineNumbers: 'on',
@@ -249,9 +254,12 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         {/* Rendered View */}
         {(!isSource || isSplit) && (
           <div className={`${isSplit ? 'w-1/2' : 'w-full'} h-full overflow-y-auto p-8 relative scroll-smooth`}>
-            <article className="max-w-3xl mx-auto select-text prose prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-a:text-[var(--accent)] prose-strong:text-[var(--tx1)] prose-code:font-mono prose-code:text-[var(--info-text)] prose-code:bg-[var(--s6)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-blockquote:text-[var(--tx4)] prose-blockquote:border-[var(--bd1)] prose-li:text-[var(--tx3)] prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-th:text-[var(--tx2)] prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2 prose-td:text-[var(--tx3)] prose-hr:border-[var(--bd2)]">
+            <article
+              style={{ fontSize: 16 * viewerFontScale / 100 }}
+              className="max-w-3xl mx-auto select-text prose prose-slate prose-headings:font-sans prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-[var(--tx3)] prose-p:leading-relaxed prose-a:text-[var(--accent)] prose-strong:text-[var(--tx1)] prose-code:font-mono prose-code:text-[var(--info-text)] prose-code:bg-[var(--s6)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-blockquote:text-[var(--tx4)] prose-blockquote:border-[var(--bd1)] prose-li:text-[var(--tx3)] prose-pre:p-0 prose-pre:bg-transparent prose-img:rounded-lg prose-table:border-collapse prose-th:border prose-th:border-[var(--bd1)] prose-th:p-2 prose-th:text-[var(--tx2)] prose-td:border prose-td:border-[var(--bd2)] prose-td:p-2 prose-td:text-[var(--tx3)] prose-hr:border-[var(--bd2)]"
+            >
               {parsedMarkdown.frontmatter.length > 0 && (
-                <FrontmatterTable entries={parsedMarkdown.frontmatter} />
+                <FrontmatterTable entries={parsedMarkdown.frontmatter} fontSize={11 * viewerFontScale / 100} />
               )}
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
@@ -275,24 +283,24 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                   h1: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h1 id={id} className="scroll-mt-6 text-2xl font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-2 mb-4 mt-6">{children}</h1>;
+                    return <h1 id={id} style={{ fontSize: 24 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-2 mb-4 mt-6">{children}</h1>;
                   },
                   h2: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h2 id={id} className="scroll-mt-6 text-xl font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-1 mb-3 mt-6">{children}</h2>;
+                    return <h2 id={id} style={{ fontSize: 20 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-1 mb-3 mt-6">{children}</h2>;
                   },
                   h3: ({ children }) => {
                     const text = String(children);
                     const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h3 id={id} className="scroll-mt-6 text-lg font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h3>;
+                    return <h3 id={id} style={{ fontSize: 18 * viewerFontScale / 100 }} className="scroll-mt-6 font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h3>;
                   },
                   code: ({ node: _node, className, children, ...props }) => {
                     const match = /language-(\w+)/.exec(className || '');
                     const isInline = !match && !String(children).includes('\n');
                     if (isInline) {
                       return (
-                        <code className="bg-[var(--s6)] text-[var(--info-text)] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                        <code style={{ fontSize: 12 * viewerFontScale / 100 }} className="bg-[var(--s6)] text-[var(--info-text)] px-1.5 py-0.5 rounded font-mono" {...props}>
                           {children}
                         </code>
                       );
@@ -301,6 +309,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                       <CodeBlock
                         language={match ? match[1] : ''}
                         value={String(children).replace(/\n$/, '')}
+                        fontSize={12 * viewerFontScale / 100}
                       />
                     );
                   },

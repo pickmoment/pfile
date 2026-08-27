@@ -13,6 +13,8 @@ import {
   Sparkles,
   Maximize2,
   Star,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata, TokenStats } from '../../types/file';
@@ -45,6 +47,8 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
   const setIsEditing = useViewerStore((s) => s.setIsEditing);
   const setDiffTargetFile = useViewerStore((s) => s.setDiffTargetFile);
   const toggleContentOnly = useViewerStore((s) => s.toggleContentOnly);
+  const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
+  const setViewerFontScale = useViewerStore((s) => s.setViewerFontScale);
 
   const files = useFileStore((s) => s.files);
   const favorites = useFileStore((s) => s.favorites);
@@ -95,6 +99,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
       file.category === 'html' ||
       file.category === 'data' ||
       (file.category === 'document' && file.extension !== 'pdf'));
+  const supportsFontScaling = isTextual && file.category !== 'html';
 
   return (
     <div className="bg-[var(--s5)] border-b border-[var(--bd2)] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 select-none">
@@ -164,6 +169,37 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
 
       {/* Right: Action Buttons & View Mode Controls */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        {supportsFontScaling && (
+          <div
+            className="flex items-center bg-[var(--s2)] p-0.5 rounded-lg border border-[var(--bd2)]"
+            aria-label="Viewer font size"
+          >
+            <button
+              onClick={() => setViewerFontScale((scale) => scale - 10)}
+              disabled={viewerFontScale <= 70}
+              title="Decrease viewer font size"
+              className="p-1.5 rounded-md text-[var(--tx4)] hover:text-[var(--tx1)] hover:bg-[var(--s7)] disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewerFontScale(100)}
+              title="Reset viewer font size"
+              className="w-11 text-center text-[10px] font-mono text-[var(--tx3)] hover:text-[var(--tx1)]"
+            >
+              {viewerFontScale}%
+            </button>
+            <button
+              onClick={() => setViewerFontScale((scale) => scale + 10)}
+              disabled={viewerFontScale >= 160}
+              title="Increase viewer font size"
+              className="p-1.5 rounded-md text-[var(--tx4)] hover:text-[var(--tx1)] hover:bg-[var(--s7)] disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Markdown View Mode Toggle */}
         {file.category === 'markdown' && (
           <div className="flex items-center bg-[var(--s2)] p-0.5 rounded-lg border border-[var(--bd2)]">

@@ -1,6 +1,21 @@
 import { create } from 'zustand';
 import { DeviceViewport, DiffDisplayMode, FileMetadata, ViewerMode } from '../types/file';
 
+const VIEWER_FONT_SCALE_KEY = 'pfile_viewer_font_scale';
+const DEFAULT_VIEWER_FONT_SCALE = 100;
+const MIN_VIEWER_FONT_SCALE = 70;
+const MAX_VIEWER_FONT_SCALE = 160;
+
+let initialViewerFontScale = DEFAULT_VIEWER_FONT_SCALE;
+try {
+  const saved = Number(localStorage.getItem(VIEWER_FONT_SCALE_KEY));
+  if (Number.isFinite(saved)) {
+    initialViewerFontScale = Math.max(MIN_VIEWER_FONT_SCALE, Math.min(MAX_VIEWER_FONT_SCALE, saved));
+  }
+} catch {
+  // Use the default when persistent storage is unavailable.
+}
+
 interface ViewerStore {
   viewerMode: ViewerMode;
   diffTargetFile: FileMetadata | null;
@@ -11,6 +26,7 @@ interface ViewerStore {
   isEditing: boolean;
   showToc: boolean;
   contentOnly: boolean;
+  viewerFontScale: number;
   setViewerMode: (mode: ViewerMode) => void;
   setDiffTargetFile: (file: FileMetadata | null) => void;
   setDiffMode: (mode: DiffDisplayMode) => void;
@@ -20,6 +36,7 @@ interface ViewerStore {
   setIsEditing: (editing: boolean) => void;
   toggleToc: () => void;
   toggleContentOnly: () => void;
+  setViewerFontScale: (scale: number | ((previous: number) => number)) => void;
   resetViewerState: () => void;
 }
 
@@ -33,6 +50,7 @@ export const useViewerStore = create<ViewerStore>((set) => ({
   isEditing: false,
   showToc: true,
   contentOnly: false,
+  viewerFontScale: initialViewerFontScale,
 
   setViewerMode: (mode) => set({ viewerMode: mode }),
   setDiffTargetFile: (file) => set({ diffTargetFile: file }),
@@ -46,6 +64,17 @@ export const useViewerStore = create<ViewerStore>((set) => ({
   setIsEditing: (editing) => set({ isEditing: editing }),
   toggleToc: () => set((state) => ({ showToc: !state.showToc })),
   toggleContentOnly: () => set((state) => ({ contentOnly: !state.contentOnly })),
+  setViewerFontScale: (scale) =>
+    set((state) => {
+      const requested = typeof scale === 'function' ? scale(state.viewerFontScale) : scale;
+      const next = Math.max(MIN_VIEWER_FONT_SCALE, Math.min(MAX_VIEWER_FONT_SCALE, requested));
+      try {
+        localStorage.setItem(VIEWER_FONT_SCALE_KEY, String(next));
+      } catch {
+        // Keep the in-memory preference when persistent storage is unavailable.
+      }
+      return { viewerFontScale: next };
+    }),
   resetViewerState: () =>
     set({
       viewerMode: 'auto',
