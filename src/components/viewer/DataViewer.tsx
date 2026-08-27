@@ -239,7 +239,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
   isEditing = false,
 }) => {
   const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
-  const [viewMode, setViewMode] = useState<'tree' | 'table' | 'raw'>('tree');
+  const setViewerMode = useViewerStore((s) => s.setViewerMode);
   const [search, setSearch] = useState('');
 
   const ext = filePath.toLowerCase().split('.').pop() || '';
@@ -257,7 +257,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({
   }, [content, isJson]);
 
   // If CSV or TSV, default to table view
-  if ((isCsv || isTsv) && viewMode !== 'raw') {
+  if (isCsv || isTsv) {
     return (
       <div className="w-full h-full flex flex-col">
         <CsvTableView content={content} delimiter={isTsv ? '\t' : ','} fontSize={12 * viewerFontScale / 100} />
@@ -265,8 +265,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({
     );
   }
 
-  // If JSON parsed successfully and tree mode is active
-  if (isJson && parsedJson !== null && viewMode === 'tree' && !isEditing) {
+  // Render parsed JSON as an interactive tree.
+  if (isJson && parsedJson !== null && !isEditing) {
     return (
       <div className="w-full h-full flex flex-col bg-[var(--s1)] overflow-hidden">
         {/* Search & Mode Toolbar */}
@@ -286,14 +286,14 @@ export const DataViewer: React.FC<DataViewerProps> = ({
 
           <div className="flex items-center gap-1 bg-[var(--s0)] p-0.5 rounded-lg border border-[var(--bd2)]">
             <button
-              onClick={() => setViewMode('tree')}
+              onClick={() => setViewerMode('tree')}
               className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-blue-600 text-white shadow-sm"
             >
               <Layers className="w-3 h-3" />
               <span>Tree View</span>
             </button>
             <button
-              onClick={() => setViewMode('raw')}
+              onClick={() => setViewerMode('source')}
               className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-[var(--tx4)] hover:text-[var(--tx1)]"
             >
               <Code2 className="w-3 h-3" />
