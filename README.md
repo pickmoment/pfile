@@ -61,15 +61,18 @@ AI 코딩 어시스턴트 및 생성형 AI 워크플로우를 위해 설계된 *
   - **내장 CSS 적용**: EPUB 스타일시트를 스코프드 CSS로 적용.
 
 ### 3. 🔀 내장 Git 소스 컨트롤
-- **`git2` (libgit2) 기반 네이티브 Git 통합**: 외부 `git` CLI 의존 없이 Rust 내장 라이브러리로 동작.
+- **하이브리드 Git 통합**: 상태·브랜치·커밋·Diff는 `git2`(libgit2)로 처리하고, Pull/Push는 로컬 설정을 완전히 따르도록 시스템 Git을 사용.
 - **자동 Repo 감지**: 현재 디렉토리가 Git 저장소 내부인지 자동 감지하여 UI 활성화.
 - **브랜치 & 상태 표시**:
   - 하단 상태바에 현재 브랜치명, detached HEAD 상태, ahead/behind 카운트 표시.
   - 파일 트리 각 파일 옆에 Git 상태 배지 (`M` Modified, `A` Added, `D` Deleted, `?` Untracked, `C` Conflict) — 색상 코딩 (emerald: staged, amber: modified, red: deleted/conflict).
+- **브랜치 관리**: 로컬 브랜치 목록, 생성과 즉시 체크아웃, 안전한 브랜치 전환, 병합 완료된 비현재 브랜치 삭제.
+- **원격 동기화**: 현재 브랜치 Push 및 upstream 자동 설정, 충돌을 숨기지 않는 fast-forward 전용 Pull. 저장소·전역 Git config, SSH config, credential helper, proxy, URL rewrite 설정을 그대로 사용.
+- 브랜치 전환과 Pull은 로컬 변경 손실 방지를 위해 깨끗한 작업 트리에서만 허용.
 - **GitPanel (사이드바 하단 Source Control 패널)**:
-  - **Changes 탭**: Staged / Unstaged 파일 목록, 개별 및 전체 Stage/Unstage, 변경 Discard.
+  - **Changes 탭**: Staged / Unstaged 파일 목록, 개별 및 전체 Stage/Unstage, 변경 Discard, 파일 클릭 시 Working Tree·Staged 패치 Diff 표시.
   - **커밋 입력**: 메시지 작성 후 버튼 클릭 또는 `Ctrl+Enter`로 즉시 커밋.
-  - **Log 탭**: 최근 50개 커밋 이력 (short ID, 요약, 작성자, 상대 시간).
+  - **Log 탭**: 최근 50개 커밋 이력과 클릭형 상세 화면 (전체 메시지, 작성자·시각, 변경 통계·파일 목록, 커밋·파일별 Diff).
 - **컨텍스트 메뉴 Git 액션**: 파일 우클릭 시 Stage File / Unstage File / Discard Changes 제공.
 - **5초 자동 갱신**: Git 상태를 주기적으로 폴링하여 외부 변경사항 자동 반영.
 
@@ -180,7 +183,9 @@ pfile/
 │   │   │   ├── FileTree.tsx   # 파일 목록 및 모달 관리
 │   │   │   ├── FileTreeNode.tsx # 개별 노드 (아이콘, Git 상태 배지, 인라인 수정, D&D)
 │   │   │   ├── ContextMenu.tsx# 우클릭 컨텍스트 메뉴 (Git 액션 포함)
-│   │   │   └── GitPanel.tsx   # Git Source Control 패널 (Changes/Log 탭)
+│   │   │   ├── GitPanel.tsx   # Git Source Control 패널 (Changes/Log 탭)
+│   │   │   ├── GitBranchMenu.tsx # 브랜치 생성·전환·삭제 및 Pull/Push
+│   │   │   └── GitDetailsModal.tsx # 작업트리·커밋 상세 및 패치 Diff
 │   │   ├── viewer/
 │   │   │   ├── ViewerContainer.tsx # 카테고리별 뷰어 라우팅
 │   │   │   ├── ViewerHeader.tsx    # 토큰 통계, LLM 복사, Diff 버튼

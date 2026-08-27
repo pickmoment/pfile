@@ -48,6 +48,8 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--bd1)] bg-[var(--s4)]">
           <h3 className="text-sm font-semibold text-[var(--tx1)]">{title}</h3>
           <button
+            onClick={onClose}
+            title="Close"
             className="text-[var(--tx4)] hover:text-[var(--tx2)] p-1 rounded-md hover:bg-[var(--s7)] transition-colors"
           >
             <X className="w-4 h-4" />

@@ -9,17 +9,29 @@ import { ToastContainer } from './components/common/Toast';
 import { QuickJumpModal } from './components/navigation/QuickJumpModal';
 import { useFileStore } from './store/useFileStore';
 import { useViewerStore } from './store/useViewerStore';
+import { useGitStore } from './store/useGitStore';
 import { useFileWatcher } from './hooks/useFileWatcher';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 export const App: React.FC = () => {
   const initWorkspace = useFileStore((s) => s.initWorkspace);
   const contentOnly = useViewerStore((s) => s.contentOnly);
+  const currentDirectory = useFileStore((s) => s.currentDirectory);
+  const refreshGitStatus = useGitStore((s) => s.refreshGitStatus);
+  const resetGitStatus = useGitStore((s) => s.reset);
 
   // Initialize workspace directory on mount
   useEffect(() => {
     initWorkspace();
   }, [initWorkspace]);
+
+  useEffect(() => {
+    if (currentDirectory) {
+      refreshGitStatus(currentDirectory);
+    } else {
+      resetGitStatus();
+    }
+  }, [currentDirectory, refreshGitStatus, resetGitStatus]);
 
   // Activate real-time file watcher & event subscription
   useFileWatcher();

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   GitBranch,
   GitCommitHorizontal,
@@ -9,14 +9,15 @@ import {
   RotateCcw,
   Check,
   Clock,
-  ArrowUp,
-  ArrowDown,
   Undo2,
+  Eye,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
-import { GitFileStatus } from '../../types/file';
+import { GitDetailsModal } from './GitDetailsModal';
+import { GitBranchMenu } from './GitBranchMenu';
+import { GitCommitDetail, GitFileStatus, GitLogEntry } from '../../types/file';
 
 // ── Status badge helper ─────────────────────────────────────────
 
@@ -59,8 +60,18 @@ const FileEntry: React.FC<{
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
   onDiscard?: (path: string) => void;
-}> = ({ file, action, onAction, onDiscard }) => (
-  <div className="group flex items-center gap-1.5 px-2 py-[3px] hover:bg-[var(--s6)] rounded text-[11.5px] cursor-default">
+  onView: (file: GitFileStatus) => void;
+}> = ({ file, action, onAction, onDiscard, onView }) => (
+  <div
+    role="button"
+    tabIndex={0}
+    onClick={() => onView(file)}
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') onView(file);
+    }}
+    className="group flex items-center gap-1.5 px-2 py-[3px] hover:bg-[var(--s6)] rounded text-[11.5px] cursor-pointer"
+    title="View diff"
+  >
     <span className={`font-mono font-bold w-5 text-center text-[10px] ${statusColor(file)}`}>
       {statusLabel(file)}
     </span>
@@ -70,6 +81,7 @@ const FileEntry: React.FC<{
     <span className="truncate text-[var(--tx6)] text-[10px] max-w-[100px]" title={file.path}>
       {file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : ''}
     </span>
+    <Eye className="w-3 h-3 text-[var(--tx5)] opacity-0 group-hover:opacity-100 transition-opacity" />
     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
       {onDiscard && file.worktree_status && file.worktree_status !== 'untracked' && (
         <button
@@ -98,10 +110,6 @@ export const GitPanel: React.FC = () => {
   const showToast = useToastStore((s) => s.showToast);
 
   const isRepo = useGitStore((s) => s.isRepo);
-  const branch = useGitStore((s) => s.branch);
-  const isDetached = useGitStore((s) => s.isDetached);
-  const ahead = useGitStore((s) => s.ahead);
-  const behind = useGitStore((s) => s.behind);
   const files = useGitStore((s) => s.files);
   const stagedCount = useGitStore((s) => s.stagedCount);
   const log = useGitStore((s) => s.log);
@@ -117,18 +125,23 @@ export const GitPanel: React.FC = () => {
   const unstageAll = useGitStore((s) => s.unstageAll);
   const commit = useGitStore((s) => s.commit);
   const discardFiles = useGitStore((s) => s.discardFiles);
+  const getDiff = useGitStore((s) => s.getDiff);
+  const getCommitDetail = useGitStore((s) => s.getCommitDetail);
+  const getCommitDiff = useGitStore((s) => s.getCommitDiff);
   const setCommitMessage = useGitStore((s) => s.setCommitMessage);
   const setGitPanelTab = useGitStore((s) => s.setGitPanelTab);
 
   const [stagedOpen, setStagedOpen] = useState(true);
   const [changesOpen, setChangesOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTitle, setDetailsTitle] = useState('Git Diff');
+  const [commitDetail, setCommitDetail] = useState<GitCommitDetail | null>(null);
+  const [selectedCommitPath, setSelectedCommitPath] = useState<string | null>(null);
+  const [patch, setPatch] = useState('');
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const detailsRequestRef = useRef(0);
 
-  // Refresh on directory change
-  useEffect(() => {
-    if (currentDirectory) {
-      refreshGitStatus(currentDirectory);
-    }
-  }, [currentDirectory, refreshGitStatus]);
 
   // Auto-refresh periodically (every 5s when panel is visible)
   useEffect(() => {
@@ -156,6 +169,73 @@ export const GitPanel: React.FC = () => {
     if (currentDirectory) discardFiles(currentDirectory, [path]);
   }, [currentDirectory, discardFiles]);
 
+
+  const handleWorkingDiff = useCallback(async (file: GitFileStatus, staged: boolean) => {
+    if (!currentDirectory) return;
+    const requestId = ++detailsRequestRef.current;
+    setDetailsOpen(true);
+    setDetailsTitle(`${staged ? 'Staged' : 'Working Tree'} · ${file.path}`);
+    setCommitDetail(null);
+    setSelectedCommitPath(null);
+    setPatch('');
+    setDetailsError(null);
+    setDetailsLoading(true);
+    try {
+      const nextPatch = await getDiff(currentDirectory, file.path, staged);
+      if (requestId === detailsRequestRef.current) setPatch(nextPatch);
+    } catch (err: unknown) {
+      if (requestId === detailsRequestRef.current) setDetailsError(String(err));
+    } finally {
+      if (requestId === detailsRequestRef.current) setDetailsLoading(false);
+    }
+  }, [currentDirectory, getDiff]);
+
+  const handleLogEntry = useCallback(async (entry: GitLogEntry) => {
+    if (!currentDirectory) return;
+    const requestId = ++detailsRequestRef.current;
+    setDetailsOpen(true);
+    setDetailsTitle(`Commit ${entry.short_id}`);
+    setCommitDetail(null);
+    setSelectedCommitPath(null);
+    setPatch('');
+    setDetailsError(null);
+    setDetailsLoading(true);
+    try {
+      const [detail, nextPatch] = await Promise.all([
+        getCommitDetail(currentDirectory, entry.id),
+        getCommitDiff(currentDirectory, entry.id),
+      ]);
+      if (requestId === detailsRequestRef.current) {
+        setCommitDetail(detail);
+        setPatch(nextPatch);
+      }
+    } catch (err: unknown) {
+      if (requestId === detailsRequestRef.current) setDetailsError(String(err));
+    } finally {
+      if (requestId === detailsRequestRef.current) setDetailsLoading(false);
+    }
+  }, [currentDirectory, getCommitDetail, getCommitDiff]);
+
+  const handleCommitFile = useCallback(async (filePath?: string) => {
+    if (!currentDirectory || !commitDetail) return;
+    const requestId = ++detailsRequestRef.current;
+    setSelectedCommitPath(filePath ?? null);
+    setDetailsError(null);
+    setDetailsLoading(true);
+    try {
+      const nextPatch = await getCommitDiff(currentDirectory, commitDetail.id, filePath);
+      if (requestId === detailsRequestRef.current) setPatch(nextPatch);
+    } catch (err: unknown) {
+      if (requestId === detailsRequestRef.current) setDetailsError(String(err));
+    } finally {
+      if (requestId === detailsRequestRef.current) setDetailsLoading(false);
+    }
+  }, [commitDetail, currentDirectory, getCommitDiff]);
+
+  const handleDetailsClose = useCallback(() => {
+    detailsRequestRef.current += 1;
+    setDetailsOpen(false);
+  }, []);
   const handleCommit = useCallback(async () => {
     if (!currentDirectory) return;
     try {
@@ -200,19 +280,7 @@ export const GitPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* Branch Info */}
-      <div className="px-3 py-1.5 flex items-center gap-1.5 text-[11px] text-[var(--tx3)] border-b border-[var(--bd2)]">
-        <GitBranch className="w-3 h-3 text-orange-400 flex-shrink-0" />
-        <span className={`font-mono font-medium truncate ${isDetached ? 'text-amber-400' : 'text-[var(--tx2)]'}`}>
-          {isDetached ? `detached@${branch}` : branch ?? 'no branch'}
-        </span>
-        {(ahead > 0 || behind > 0) && (
-          <span className="flex items-center gap-1 text-[10px] text-[var(--tx5)]">
-            {ahead > 0 && <span className="flex items-center gap-0.5"><ArrowUp className="w-2.5 h-2.5" />{ahead}</span>}
-            {behind > 0 && <span className="flex items-center gap-0.5"><ArrowDown className="w-2.5 h-2.5" />{behind}</span>}
-          </span>
-        )}
-      </div>
+      <GitBranchMenu currentDirectory={currentDirectory} />
 
       {/* Tab Switcher */}
       <div className="flex border-b border-[var(--bd2)]">
@@ -287,8 +355,14 @@ export const GitPanel: React.FC = () => {
                     <Minus className="w-3 h-3" />
                   </button>
                 </button>
-                {stagedOpen && staged.map((f) => (
-                  <FileEntry key={`s-${f.path}`} file={f} action="unstage" onAction={handleUnstage} />
+                {stagedOpen && staged.map((file) => (
+                  <FileEntry
+                    key={`s-${file.path}`}
+                    file={file}
+                    action="unstage"
+                    onAction={handleUnstage}
+                    onView={(selected) => handleWorkingDiff(selected, true)}
+                  />
                 ))}
               </div>
             )}
@@ -311,8 +385,15 @@ export const GitPanel: React.FC = () => {
                     <Plus className="w-3 h-3" />
                   </button>
                 </button>
-                {changesOpen && unstaged.map((f) => (
-                  <FileEntry key={`u-${f.path}`} file={f} action="stage" onAction={handleStage} onDiscard={handleDiscard} />
+                {changesOpen && unstaged.map((file) => (
+                  <FileEntry
+                    key={`u-${file.path}`}
+                    file={file}
+                    action="stage"
+                    onAction={handleStage}
+                    onDiscard={handleDiscard}
+                    onView={(selected) => handleWorkingDiff(selected, false)}
+                  />
                 ))}
               </div>
             )}
@@ -340,7 +421,14 @@ export const GitPanel: React.FC = () => {
           {log.map((entry) => (
             <div
               key={entry.id}
-              className="px-3 py-1.5 border-b border-[var(--bd2)] hover:bg-[var(--s6)] cursor-default"
+              onClick={() => handleLogEntry(entry)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') handleLogEntry(entry);
+              }}
+              className="px-3 py-1.5 border-b border-[var(--bd2)] hover:bg-[var(--s6)] cursor-pointer"
+              title="View commit details"
             >
               <div className="flex items-center gap-1.5 text-[11px]">
                 <span className="font-mono text-blue-400 text-[10px]">{entry.short_id}</span>
@@ -355,6 +443,17 @@ export const GitPanel: React.FC = () => {
           ))}
         </div>
       )}
+      <GitDetailsModal
+        isOpen={detailsOpen}
+        title={detailsTitle}
+        detail={commitDetail}
+        patch={patch}
+        selectedPath={selectedCommitPath}
+        loading={detailsLoading}
+        error={detailsError}
+        onSelectFile={commitDetail ? handleCommitFile : undefined}
+        onClose={handleDetailsClose}
+      />
     </div>
   );
 };

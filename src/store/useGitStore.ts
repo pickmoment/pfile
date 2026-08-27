@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { GitFileStatus, GitLogEntry, GitRepoInfo } from '../types/file';
+import { GitBranchInfo, GitCommitDetail, GitFileStatus, GitLogEntry, GitRepoInfo } from '../types/file';
 
 interface GitStore {
   // State
@@ -16,6 +16,7 @@ interface GitStore {
   untrackedCount: number;
   conflictedCount: number;
   log: GitLogEntry[];
+  branches: GitBranchInfo[];
   commitMessage: string;
   isLoading: boolean;
   isCommitting: boolean;
@@ -27,11 +28,19 @@ interface GitStore {
   loadLog: (path: string) => Promise<void>;
   stageFiles: (path: string, files: string[]) => Promise<void>;
   unstageFiles: (path: string, files: string[]) => Promise<void>;
+  loadBranches: (path: string) => Promise<void>;
+  createBranch: (path: string, name: string) => Promise<void>;
+  checkoutBranch: (path: string, name: string) => Promise<void>;
+  deleteBranch: (path: string, name: string) => Promise<void>;
+  pull: (path: string) => Promise<string>;
+  push: (path: string) => Promise<string>;
   stageAll: (path: string) => Promise<void>;
   unstageAll: (path: string) => Promise<void>;
   commit: (path: string) => Promise<string | null>;
   discardFiles: (path: string, files: string[]) => Promise<void>;
-  getDiff: (path: string, filePath: string) => Promise<string>;
+  getDiff: (path: string, filePath: string, staged: boolean) => Promise<string>;
+  getCommitDetail: (path: string, commitId: string) => Promise<GitCommitDetail>;
+  getCommitDiff: (path: string, commitId: string, filePath?: string) => Promise<string>;
   setCommitMessage: (msg: string) => void;
   setGitPanelOpen: (open: boolean) => void;
   setGitPanelTab: (tab: 'changes' | 'log') => void;
@@ -52,6 +61,7 @@ export const useGitStore = create<GitStore>((set, get) => ({
   untrackedCount: 0,
   conflictedCount: 0,
   log: [],
+  branches: [],
   commitMessage: '',
   isLoading: false,
   isCommitting: false,
@@ -100,6 +110,38 @@ export const useGitStore = create<GitStore>((set, get) => ({
     }
   },
 
+  loadBranches: async (path: string) => {
+    const branches: GitBranchInfo[] = await invoke('git_branches', { path });
+    set({ branches });
+  },
+
+  createBranch: async (path: string, name: string) => {
+    await invoke('git_create_branch', { path, name });
+    await Promise.all([get().refreshGitStatus(path), get().loadBranches(path), get().loadLog(path)]);
+  },
+
+  checkoutBranch: async (path: string, name: string) => {
+    await invoke('git_checkout_branch', { path, name });
+    await Promise.all([get().refreshGitStatus(path), get().loadBranches(path), get().loadLog(path)]);
+  },
+
+  deleteBranch: async (path: string, name: string) => {
+    await invoke('git_delete_branch', { path, name });
+    await get().loadBranches(path);
+  },
+
+  pull: async (path: string) => {
+    const message: string = await invoke('git_pull', { path });
+    await Promise.all([get().refreshGitStatus(path), get().loadBranches(path), get().loadLog(path)]);
+    return message;
+  },
+
+  push: async (path: string) => {
+    const message: string = await invoke('git_push', { path });
+    await Promise.all([get().refreshGitStatus(path), get().loadBranches(path)]);
+    return message;
+  },
+
   stageFiles: async (path: string, files: string[]) => {
     await invoke('git_stage', { path, files });
     await get().refreshGitStatus(path);
@@ -140,9 +182,12 @@ export const useGitStore = create<GitStore>((set, get) => ({
     await get().refreshGitStatus(path);
   },
 
-  getDiff: async (path: string, filePath: string) => {
-    return await invoke('git_diff', { path, filePath });
-  },
+  getDiff: async (path: string, filePath: string, staged: boolean) =>
+    invoke('git_diff', { path, filePath, staged }),
+  getCommitDetail: async (path: string, commitId: string) =>
+    invoke('git_commit_detail', { path, commitId }),
+  getCommitDiff: async (path: string, commitId: string, filePath?: string) =>
+    invoke('git_commit_diff', { path, commitId, filePath }),
 
   setCommitMessage: (msg: string) => set({ commitMessage: msg }),
   setGitPanelOpen: (open: boolean) => set({ gitPanelOpen: open }),
@@ -166,6 +211,7 @@ export const useGitStore = create<GitStore>((set, get) => ({
       untrackedCount: 0,
       conflictedCount: 0,
       log: [],
+      branches: [],
       commitMessage: '',
     }),
 }));

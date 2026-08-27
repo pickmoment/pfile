@@ -119,6 +119,32 @@ export interface GitLogEntry {
   relative_time: string;
 }
 
+export interface GitCommitFile {
+  path: string;
+  old_path: string | null;
+  status: GitFileStatusKind;
+}
+
+export interface GitCommitDetail {
+  id: string;
+  short_id: string;
+  summary: string;
+  message: string;
+  author: string;
+  email: string;
+  timestamp: number;
+  parent_ids: string[];
+  additions: number;
+  deletions: number;
+  files: GitCommitFile[];
+}
+
+export interface GitBranchInfo {
+  name: string;
+  current: boolean;
+  upstream: string | null;
+}
+
 // ── Archive Types ───────────────────────────────────────────────
 
 export interface ArchiveEntry {
