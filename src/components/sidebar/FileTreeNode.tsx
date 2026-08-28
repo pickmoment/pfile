@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, MoreVertical, Edit2, Trash2, FolderSearch } from 'lucide-react';
+import { ChevronRight, MoreVertical, Edit2, Trash2, FolderSearch, CheckSquare, Square } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata } from '../../types/file';
 import { getFileIcon } from '../../utils/fileIcons';
@@ -10,6 +10,7 @@ import { useGitStore } from '../../store/useGitStore';
 interface FileTreeNodeProps {
   file: FileMetadata;
   depth?: number;
+  visibleFiles?: FileMetadata[];
   onContextMenu: (e: React.MouseEvent, file: FileMetadata) => void;
   onRenameRequest: (file: FileMetadata) => void;
   onDeleteRequest: (file: FileMetadata) => void;
@@ -18,12 +19,16 @@ interface FileTreeNodeProps {
 export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   file,
   depth = 0,
+  visibleFiles = [],
   onContextMenu,
   onRenameRequest,
   onDeleteRequest,
 }) => {
   const selectedFile = useFileStore((s) => s.selectedFile);
+  const selectedPaths = useFileStore((s) => s.selectedPaths);
   const setSelectedFile = useFileStore((s) => s.setSelectedFile);
+  const toggleSelectPath = useFileStore((s) => s.toggleSelectPath);
+  const selectRange = useFileStore((s) => s.selectRange);
   const expandedDirs = useFileStore((s) => s.expandedDirs);
   const toggleDirExpanded = useFileStore((s) => s.toggleDirExpanded);
   const dirCache = useFileStore((s) => s.dirCache);
@@ -41,6 +46,8 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isSelected = selectedFile?.path === file.path;
+  const isPartiallySelected = selectedPaths.includes(file.path);
+  const hasMultipleSelected = selectedPaths.length > 1;
   const isExpanded = expandedDirs.has(file.path);
   const childFiles = file.is_dir ? dirCache[file.path] || [] : [];
 
@@ -63,8 +70,24 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (e.shiftKey) {
+      if (visibleFiles && visibleFiles.length > 0) {
+        selectRange(file, visibleFiles);
+      } else {
+        setSelectedFile(file);
+      }
+      return;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      toggleSelectPath(file, true);
+      return;
+    }
+
     if (file.is_dir) {
       toggleDirExpanded(file.path);
+      setSelectedFile(file);
     } else {
       setSelectedFile(file);
     }
@@ -91,7 +114,13 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   // Drag and Drop
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', file.path);
+    if (isPartiallySelected && selectedPaths.length > 1) {
+      e.dataTransfer.setData('text/plain', selectedPaths.join('\n'));
+      e.dataTransfer.setData('application/json', JSON.stringify(selectedPaths));
+    } else {
+      e.dataTransfer.setData('text/plain', file.path);
+      e.dataTransfer.setData('application/json', JSON.stringify([file.path]));
+    }
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -114,14 +143,32 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
     e.stopPropagation();
     setIsDragOver(false);
 
-    const sourcePath = e.dataTransfer.getData('text/plain');
-    if (sourcePath && sourcePath !== file.path) {
+    let sources: string[] = [];
+    const jsonPayload = e.dataTransfer.getData('application/json');
+    if (jsonPayload) {
+      try {
+        sources = JSON.parse(jsonPayload);
+      } catch {
+        // ignore
+      }
+    }
+    if (sources.length === 0) {
+      const textPayload = e.dataTransfer.getData('text/plain');
+      if (textPayload) {
+        sources = textPayload.split('\n').map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    // Filter out dropping into self or child
+    sources = sources.filter((s) => s !== file.path && !file.path.startsWith(s + '/'));
+
+    if (sources.length > 0) {
       try {
         await invoke('move_items', {
-          sources: [sourcePath],
+          sources,
           targetDir: file.path,
         });
-        showToast('Moved', `Moved to ${file.name}`, 'success');
+        showToast('Moved', `Moved ${sources.length} item(s) to ${file.name}`, 'success');
         await refreshDirectory();
       } catch (err: unknown) {
         const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Move failed';
@@ -167,19 +214,47 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (!isPartiallySelected) {
+            setSelectedFile(file);
+          }
           onContextMenu(e, file);
         }}
-        style={{ paddingLeft: `${depth * 14 + 10}px` }}
+        style={{ paddingLeft: `${depth * 14 + 6}px` }}
         className={`group relative flex items-center py-1.5 pr-2 rounded-md cursor-pointer transition-colors ${
           file.is_hidden || file.name.startsWith('.') ? 'opacity-70 hover:opacity-100' : ''
         } ${
           isSelected
             ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] font-medium border-l-2 border-[var(--selected-border)]'
+            : isPartiallySelected
+            ? 'bg-[var(--selected-bg)]/60 text-[var(--selected-text)] font-medium border-l-2 border-[var(--selected-border)]/60'
             : 'text-[var(--tx3)] hover:bg-[var(--s6)] hover:text-[var(--tx1)]'
         } ${isDragOver ? 'bg-[var(--info-bg)] ring-1 ring-[var(--selected-border)]' : ''}`}
       >
-        {/* Left: Chevron + Icon + Name — fills all available width */}
+        {/* Left: Checkbox + Chevron + Icon + Name */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+          {/* Selection Checkbox */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSelectPath(file, true);
+            }}
+            title={isPartiallySelected ? 'Deselect item' : 'Select item'}
+            className={`flex-shrink-0 p-0.5 rounded transition-all ${
+              isPartiallySelected
+                ? 'opacity-100 text-blue-400 hover:text-blue-300'
+                : hasMultipleSelected
+                ? 'opacity-60 hover:opacity-100 text-[var(--tx5)] hover:text-[var(--tx2)]'
+                : 'opacity-0 group-hover:opacity-70 hover:!opacity-100 text-[var(--tx5)] hover:text-[var(--tx2)]'
+            }`}
+          >
+            {isPartiallySelected ? (
+              <CheckSquare className="w-3.5 h-3.5 fill-blue-500/20" />
+            ) : (
+              <Square className="w-3.5 h-3.5" />
+            )}
+          </button>
+
           {file.is_dir ? (
             <button
               onClick={(e) => {
@@ -227,7 +302,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
             </span>
           )}
 
-          {/* Git badge — sits right after name, hidden on hover when actions appear */}
+          {/* Git badge */}
           {gitFileStatus && (
             <span
               className={`flex-shrink-0 font-mono font-bold text-[9px] px-1 rounded ml-auto group-hover:hidden ${
@@ -251,7 +326,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
           )}
         </div>
 
-        {/* Action buttons — hidden by default, appear on hover with bg to cover text underneath */}
+        {/* Action buttons */}
         <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0 ml-1 bg-[var(--s6)] rounded px-0.5">
           <button
             onClick={(e) => {
@@ -280,7 +355,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               e.stopPropagation();
               onDeleteRequest(file);
             }}
-            title="Delete"
+            title={isPartiallySelected && selectedPaths.length > 1 ? `Delete ${selectedPaths.length} items` : 'Delete'}
             className="p-0.5 rounded hover:bg-[var(--danger-bg)] text-[var(--tx4)] hover:text-[var(--danger-text)]"
           >
             <Trash2 className="w-3 h-3" />
@@ -314,6 +389,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
                 key={child.path}
                 file={child}
                 depth={depth + 1}
+                visibleFiles={visibleFiles}
                 onContextMenu={onContextMenu}
                 onRenameRequest={onRenameRequest}
                 onDeleteRequest={onDeleteRequest}

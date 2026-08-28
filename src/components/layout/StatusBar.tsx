@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, CheckCircle, FileText, GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
+import { Radio, CheckCircle, FileText, CheckSquare, GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
 import { useFileStore } from '../../store/useFileStore';
 import { useGitStore } from '../../store/useGitStore';
 import { formatBytes } from '../../utils/formatters';
@@ -7,6 +7,8 @@ import { formatBytes } from '../../utils/formatters';
 export const StatusBar: React.FC = () => {
   const watcherActive = useFileStore((s) => s.watcherActive);
   const selectedFile = useFileStore((s) => s.selectedFile);
+  const selectedPaths = useFileStore((s) => s.selectedPaths);
+  const getSelectedFiles = useFileStore((s) => s.getSelectedFiles);
   const files = useFileStore((s) => s.files);
   const isRepo = useGitStore((s) => s.isRepo);
   const branch = useGitStore((s) => s.branch);
@@ -46,7 +48,15 @@ export const StatusBar: React.FC = () => {
 
         {/* Selected / Directory Info */}
         <div className="flex items-center gap-1 text-[var(--tx4)]">
-          {selectedFile ? (
+          {selectedPaths.length > 1 ? (
+            <span className="flex items-center gap-1.5 text-blue-400 font-medium">
+              <CheckSquare className="w-3 h-3 flex-shrink-0" />
+              <span>{selectedPaths.length} items selected</span>
+              <span className="text-[var(--tx5)] font-normal">
+                ({formatBytes(getSelectedFiles().reduce((acc, f) => acc + (f.is_dir ? 0 : f.size), 0))})
+              </span>
+            </span>
+          ) : selectedFile ? (
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3 text-sky-400" />
               <span className="text-[var(--tx2)]">{selectedFile.name}</span>
@@ -60,6 +70,7 @@ export const StatusBar: React.FC = () => {
 
       {/* Center: Keyboard Shortcuts Mini Hint */}
       <div className="hidden lg:flex items-center gap-3 text-[10.5px] text-[var(--tx5)]">
+        <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+A</kbd> Select All</span>
         <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+P</kbd> Quick Jump</span>
         <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">Ctrl+L</kbd> Path</span>
         <span><kbd className="bg-[var(--bg-muted)] px-1 py-0.2 rounded text-[var(--tx3)]">F2</kbd> Rename</span>

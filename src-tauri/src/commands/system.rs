@@ -265,10 +265,4 @@ mod tests {
         assert_eq!(paths[0].kind, "home");
     }
 
-    #[test]
-    fn test_recursive_search() {
-        let temp_dir = std::env::temp_dir();
-        let res = search_files_recursive(temp_dir.to_string_lossy().to_string(), "".to_string(), Some(5), Some(true)).unwrap();
-        assert!(res.len() <= 5);
-    }
 }

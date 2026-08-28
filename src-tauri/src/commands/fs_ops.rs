@@ -212,7 +212,7 @@ pub fn read_file_text(path: String) -> Result<String, String> {
         }
     }
 
-    let mut file = File::open(p).map_err(|e| format!("Failed to open file: {}", e))?;
+    let file = File::open(p).map_err(|e| format!("Failed to open file: {}", e))?;
     let mut buffer = Vec::new();
 
     // Read up to limit + 1 to check if truncated

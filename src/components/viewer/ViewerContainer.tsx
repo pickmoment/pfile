@@ -13,11 +13,12 @@ import { DiffViewer } from './DiffViewer';
 import { ExcelViewer } from './ExcelViewer';
 import { ArchiveViewer } from './ArchiveViewer';
 import { EpubViewer } from './EpubViewer';
-import { Sparkles, FileText, ArrowLeftRight, Binary, ExternalLink, Minimize2 } from 'lucide-react';
+import { BatchSelectionViewer } from './BatchSelectionViewer';
+import { Sparkles, FileText, ArrowLeftRight, Binary, ExternalLink, Minimize2, CheckSquare, ChevronLeft } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters';
-
 export const ViewerContainer: React.FC = () => {
   const selectedFile = useFileStore((s) => s.selectedFile);
+  const selectedPaths = useFileStore((s) => s.selectedPaths);
   const viewerMode = useViewerStore((s) => s.viewerMode);
   const diffTargetFile = useViewerStore((s) => s.diffTargetFile);
   const setDiffTargetFile = useViewerStore((s) => s.setDiffTargetFile);
@@ -25,6 +26,16 @@ export const ViewerContainer: React.FC = () => {
   const contentOnly = useViewerStore((s) => s.contentOnly);
   const toggleContentOnly = useViewerStore((s) => s.toggleContentOnly);
 
+  const [viewBatchOverview, setViewBatchOverview] = useState(true);
+
+  // When selection count changes, auto-switch to batch overview if multiple
+  useEffect(() => {
+    if (selectedPaths.length > 1) {
+      // Default to batch overview when multiple files selected
+    } else {
+      setViewBatchOverview(false);
+    }
+  }, [selectedPaths.length]);
   const {
     content,
     binaryBase64,
@@ -55,6 +66,14 @@ export const ViewerContainer: React.FC = () => {
       setHasChanges(false);
     }
   };
+
+  if (selectedPaths.length > 1 && viewBatchOverview) {
+    return (
+      <BatchSelectionViewer
+        onPreviewSingleFile={() => setViewBatchOverview(false)}
+      />
+    );
+  }
 
   if (!selectedFile) {
     return (
@@ -127,6 +146,25 @@ export const ViewerContainer: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col bg-[var(--s1)] overflow-hidden">
+      {/* Multi-selection back-to-batch banner */}
+      {selectedPaths.length > 1 && !contentOnly && (
+        <div className="bg-blue-500/10 border-b border-blue-500/20 px-4 py-1.5 flex items-center justify-between text-xs select-none">
+          <div className="flex items-center gap-2 text-blue-400 font-medium">
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span>{selectedPaths.length} items in batch selection</span>
+            <span className="text-[var(--tx5)] font-mono">• Previewing "{selectedFile.name}"</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setViewBatchOverview(true)}
+            className="px-2.5 py-0.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded font-medium inline-flex items-center gap-1 transition-colors text-[11.5px]"
+          >
+            <ChevronLeft className="w-3 h-3" />
+            <span>Batch Overview</span>
+          </button>
+        </div>
+      )}
+
       {/* Viewer Header — hidden in content-only mode */}
       {!contentOnly && (
         <ViewerHeader

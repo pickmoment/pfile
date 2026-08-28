@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FileTreeNode } from './FileTreeNode';
 import { ContextMenu } from './ContextMenu';
 import { RenameDialog, DeleteConfirmDialog } from '../common/Dialogs';
 import { FileMetadata } from '../../types/file';
 import { useFileStore } from '../../store/useFileStore';
+import { getVisibleFiles } from '../../utils/fileTreeUtils';
 import { FolderSearch, Sparkles } from 'lucide-react';
-
 export const FileTree: React.FC = () => {
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const files = useFileStore((s) => s.files);
+  const dirCache = useFileStore((s) => s.dirCache);
+  const expandedDirs = useFileStore((s) => s.expandedDirs);
+  const selectedPaths = useFileStore((s) => s.selectedPaths);
   const searchQuery = useFileStore((s) => s.searchQuery);
   const categoryFilter = useFileStore((s) => s.categoryFilter);
   const showHiddenFiles = useFileStore((s) => s.showHiddenFiles);
   const isLoading = useFileStore((s) => s.isLoading);
-  // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -33,6 +35,20 @@ export const FileTree: React.FC = () => {
       file,
     });
   };
+
+  // Compute visible flattened files for Shift+Click range selection and select all
+  const visibleFiles = useMemo(
+    () =>
+      getVisibleFiles(
+        files,
+        dirCache,
+        expandedDirs,
+        showHiddenFiles,
+        searchQuery,
+        categoryFilter
+      ),
+    [files, dirCache, expandedDirs, showHiddenFiles, searchQuery, categoryFilter]
+  );
 
   // Filter top-level items
   const filteredFiles = files.filter((file) => {
@@ -96,9 +112,16 @@ export const FileTree: React.FC = () => {
             key={file.path}
             file={file}
             depth={0}
+            visibleFiles={visibleFiles}
             onContextMenu={handleContextMenu}
             onRenameRequest={(f) => setRenameTarget(f)}
-            onDeleteRequest={(f) => setDeleteTargetPaths([f.path])}
+            onDeleteRequest={(f) => {
+              if (selectedPaths.includes(f.path) && selectedPaths.length > 1) {
+                setDeleteTargetPaths(selectedPaths);
+              } else {
+                setDeleteTargetPaths([f.path]);
+              }
+            }}
           />
         ))
       )}
@@ -111,7 +134,13 @@ export const FileTree: React.FC = () => {
           file={contextMenu.file}
           onClose={() => setContextMenu(null)}
           onRename={(f) => setRenameTarget(f)}
-          onDelete={(f) => setDeleteTargetPaths([f.path])}
+          onDelete={(f) => {
+            if (selectedPaths.includes(f.path) && selectedPaths.length > 1) {
+              setDeleteTargetPaths(selectedPaths);
+            } else {
+              setDeleteTargetPaths([f.path]);
+            }
+          }}
         />
       )}
 

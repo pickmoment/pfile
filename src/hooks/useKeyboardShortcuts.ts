@@ -4,7 +4,7 @@ import { useFileStore } from '../store/useFileStore';
 import { useClipboardStore } from '../store/useClipboardStore';
 import { useViewerStore } from '../store/useViewerStore';
 import { useToastStore } from '../store/useToastStore';
-
+import { getVisibleFiles } from '../utils/fileTreeUtils';
 interface ShortcutOptions {
   onRename?: () => void;
   onDelete?: () => void;
@@ -14,6 +14,13 @@ interface ShortcutOptions {
 export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
   const selectedFile = useFileStore((s) => s.selectedFile);
   const selectedPaths = useFileStore((s) => s.selectedPaths);
+  const files = useFileStore((s) => s.files);
+  const dirCache = useFileStore((s) => s.dirCache);
+  const expandedDirs = useFileStore((s) => s.expandedDirs);
+  const searchQuery = useFileStore((s) => s.searchQuery);
+  const categoryFilter = useFileStore((s) => s.categoryFilter);
+  const selectAll = useFileStore((s) => s.selectAll);
+  const clearSelection = useFileStore((s) => s.clearSelection);
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const refreshDirectory = useFileStore((s) => s.refreshDirectory);
   const setQuickJumpOpen = useFileStore((s) => s.setQuickJumpOpen);
@@ -42,13 +49,37 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
         target.isContentEditable ||
         target.closest('.monaco-editor');
 
-      // Escape: Exit content-only mode
-      if (e.key === 'Escape' && contentOnly) {
-        e.preventDefault();
-        toggleContentOnly();
-        return;
+      // Escape: Exit content-only mode or clear multi-selection
+      if (e.key === 'Escape' && !isInput) {
+        if (contentOnly) {
+          e.preventDefault();
+          toggleContentOnly();
+          return;
+        }
+        if (selectedPaths.length > 1) {
+          e.preventDefault();
+          clearSelection();
+          return;
+        }
       }
 
+      // Ctrl/Cmd + A: Select All visible files in workspace
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInput) {
+        e.preventDefault();
+        const visible = getVisibleFiles(
+          files,
+          dirCache,
+          expandedDirs,
+          showHiddenFiles,
+          searchQuery,
+          categoryFilter
+        );
+        if (visible.length > 0) {
+          selectAll(visible);
+          showToast('Selected All', `${visible.length} item(s) selected`, 'info');
+        }
+        return;
+      }
       // Ctrl/Cmd + Shift + F: Toggle content-only mode
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault();
@@ -188,6 +219,13 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
   }, [
     selectedFile,
     selectedPaths,
+    files,
+    dirCache,
+    expandedDirs,
+    searchQuery,
+    categoryFilter,
+    selectAll,
+    clearSelection,
     currentDirectory,
     refreshDirectory,
     clipboard,

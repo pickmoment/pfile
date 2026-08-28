@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { FileFilterCategory, FileMetadata, QuickPathItem } from '../types/file';
-
+import { getSelectedFiles } from '../utils/fileTreeUtils';
 interface FileStore {
   currentDirectory: string;
   files: FileMetadata[];
   selectedFile: FileMetadata | null;
   selectedPaths: string[];
+  lastSelectedPath: string | null;
   expandedDirs: Set<string>;
   dirCache: Record<string, FileMetadata[]>;
   favorites: string[];
@@ -29,6 +30,11 @@ interface FileStore {
   refreshDirectory: () => Promise<void>;
   setSelectedFile: (file: FileMetadata | null) => void;
   setSelectedPaths: (paths: string[]) => void;
+  toggleSelectPath: (file: FileMetadata, isMulti: boolean) => void;
+  selectRange: (targetFile: FileMetadata, visibleFiles: FileMetadata[]) => void;
+  selectAll: (visibleFiles?: FileMetadata[]) => void;
+  clearSelection: () => void;
+  getSelectedFiles: () => FileMetadata[];
   toggleDirExpanded: (dirPath: string) => Promise<void>;
   addFavorite: (path: string) => void;
   removeFavorite: (path: string) => void;
@@ -74,6 +80,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
   files: [],
   selectedFile: null,
   selectedPaths: [],
+  lastSelectedPath: null,
   expandedDirs: new Set<string>(),
   dirCache: {},
   favorites: getStored(FAVORITES_KEY),
@@ -253,11 +260,108 @@ export const useFileStore = create<FileStore>((set, get) => ({
     set({
       selectedFile: file,
       selectedPaths: file ? [file.path] : [],
+      lastSelectedPath: file ? file.path : null,
     });
   },
 
   setSelectedPaths: (paths) => {
-    set({ selectedPaths: paths });
+    const { selectedFile, files, dirCache } = get();
+    let nextSelectedFile = selectedFile;
+    if (selectedFile && !paths.includes(selectedFile.path)) {
+      const all = getSelectedFiles(paths, files, dirCache);
+      nextSelectedFile = all[0] || null;
+    } else if (!selectedFile && paths.length > 0) {
+      const all = getSelectedFiles(paths, files, dirCache);
+      nextSelectedFile = all[0] || null;
+    }
+    set({
+      selectedPaths: paths,
+      selectedFile: nextSelectedFile,
+      lastSelectedPath: paths.length > 0 ? paths[paths.length - 1] : null,
+    });
+  },
+
+  toggleSelectPath: (file: FileMetadata, isMulti: boolean) => {
+    if (!isMulti) {
+      get().setSelectedFile(file);
+      return;
+    }
+
+    const { selectedPaths, selectedFile } = get();
+    const exists = selectedPaths.includes(file.path);
+
+    if (exists) {
+      const nextPaths = selectedPaths.filter((p) => p !== file.path);
+      let nextSelectedFile = selectedFile;
+      if (selectedFile?.path === file.path) {
+        const remaining = get().getSelectedFiles().filter((f) => f.path !== file.path);
+        nextSelectedFile = remaining[0] || null;
+      }
+      set({
+        selectedPaths: nextPaths,
+        selectedFile: nextSelectedFile,
+        lastSelectedPath: file.path,
+      });
+    } else {
+      set({
+        selectedPaths: [...selectedPaths, file.path],
+        selectedFile: file,
+        lastSelectedPath: file.path,
+      });
+    }
+  },
+
+  selectRange: (targetFile: FileMetadata, visibleFiles: FileMetadata[]) => {
+    const { lastSelectedPath, selectedFile } = get();
+    const anchorPath = lastSelectedPath || selectedFile?.path;
+
+    if (!anchorPath || visibleFiles.length === 0) {
+      get().setSelectedFile(targetFile);
+      return;
+    }
+
+    const anchorIndex = visibleFiles.findIndex((f) => f.path === anchorPath);
+    const targetIndex = visibleFiles.findIndex((f) => f.path === targetFile.path);
+
+    if (anchorIndex === -1 || targetIndex === -1) {
+      get().setSelectedFile(targetFile);
+      return;
+    }
+
+    const start = Math.min(anchorIndex, targetIndex);
+    const end = Math.max(anchorIndex, targetIndex);
+    const rangeFiles = visibleFiles.slice(start, end + 1);
+    const rangePaths = rangeFiles.map((f) => f.path);
+
+    set({
+      selectedPaths: rangePaths,
+      selectedFile: targetFile,
+      lastSelectedPath: anchorPath,
+    });
+  },
+
+  selectAll: (visibleFiles?: FileMetadata[]) => {
+    const items = visibleFiles ?? get().files;
+    if (items.length === 0) return;
+    const paths = items.map((f) => f.path);
+    set({
+      selectedPaths: paths,
+      selectedFile: items[0] || null,
+      lastSelectedPath: items[0]?.path || null,
+    });
+  },
+
+  clearSelection: () => {
+    set({
+      selectedPaths: [],
+      selectedFile: null,
+      lastSelectedPath: null,
+    });
+  },
+
+  getSelectedFiles: () => {
+    const { selectedPaths, files, dirCache } = get();
+    return getSelectedFiles(selectedPaths, files, dirCache);
   },
 
   toggleDirExpanded: async (dirPath: string) => {
