@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   ZoomIn,
   ZoomOut,
@@ -7,6 +8,7 @@ import {
   Eye,
   Music,
   RotateCcw,
+  Captions,
 } from 'lucide-react';
 import { FileMetadata } from '../../types/file';
 import { CodeViewer } from './CodeViewer';
@@ -16,6 +18,58 @@ interface MediaViewerProps {
   file: FileMetadata;
   binaryBase64: string;
   textContent?: string;
+}
+
+interface SubtitleCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
+function parseTimestamp(t: string): number {
+  const parts = t.trim().split(':');
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
+  if (parts.length === 3) {
+    hours = parseInt(parts[0], 10) || 0;
+    minutes = parseInt(parts[1], 10) || 0;
+    seconds = parseFloat(parts[2].replace(',', '.')) || 0;
+  } else if (parts.length === 2) {
+    minutes = parseInt(parts[0], 10) || 0;
+    seconds = parseFloat(parts[1].replace(',', '.')) || 0;
+  }
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function srtToVtt(srt: string): string {
+  const normalized = srt.replace(/\r\n/g, '\n').replace(/,(\d{3})/g, '.$1');
+  return `WEBVTT\n\n${normalized}`;
+}
+
+function parseVtt(vtt: string): SubtitleCue[] {
+  const cues: SubtitleCue[] = [];
+  const lines = vtt.replace(/\r\n/g, '\n').split('\n');
+  const timeRe = /([\d:.]+)\s*-->\s*([\d:.]+)/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(timeRe);
+    if (!match) continue;
+
+    const start = parseTimestamp(match[1]);
+    const end = parseTimestamp(match[2]);
+    const textLines: string[] = [];
+    i++;
+    while (i < lines.length && lines[i].trim() !== '') {
+      textLines.push(lines[i]);
+      i++;
+    }
+    if (textLines.length > 0) {
+      cues.push({ start, end, text: textLines.join('\n') });
+    }
+  }
+
+  return cues;
 }
 
 export const MediaViewer: React.FC<MediaViewerProps> = ({
@@ -29,8 +83,13 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showCheckerboard, setShowCheckerboard] = useState(true);
   const [svgMode, setSvgMode] = useState<'visual' | 'code'>('visual');
+  const [subtitleTrackUrl, setSubtitleTrackUrl] = useState<string | null>(null);
+  const [subtitleCues, setSubtitleCues] = useState<SubtitleCue[]>([]);
+  const [activeCueText, setActiveCueText] = useState('');
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLTrackElement>(null);
 
   const ext = file.extension?.toLowerCase() || '';
   const isSvg = ext === 'svg';
@@ -45,7 +104,7 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
     : isPdf
     ? 'application/pdf'
     : isAudio
-    ? `audio/${ext === 'mp3' ? 'mpeg' : ext}`
+    ? `audio/${ext === 'mp3' ? 'mpeg' : ext === 'm4a' ? 'mp4' : ext}`
     : isVideo
     ? `video/${ext}`
     : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
@@ -59,6 +118,62 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
     setZoom(100);
     setPan({ x: 0, y: 0 });
   }, [file.path]);
+
+  // Look for a sibling subtitle file (.vtt / .srt) matching the media file name
+  useEffect(() => {
+    let cancelled = false;
+    let createdUrl: string | null = null;
+
+    setSubtitleTrackUrl(null);
+    setSubtitleCues([]);
+    setActiveCueText('');
+    setSubtitlesEnabled(true);
+
+    if (!isAudio && !isVideo) return;
+
+    const lastDot = file.path.lastIndexOf('.');
+    const lastSlash = Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\'));
+    const base = lastDot > lastSlash ? file.path.slice(0, lastDot) : file.path;
+    const candidates = [`${base}.vtt`, `${base}.srt`];
+
+    (async () => {
+      for (const candidate of candidates) {
+        try {
+          const raw: string = await invoke('read_file_text', { path: candidate });
+          if (cancelled) return;
+
+          const vttText = candidate.endsWith('.srt') ? srtToVtt(raw) : raw;
+          const cues = parseVtt(vttText);
+          const blob = new Blob([vttText], { type: 'text/vtt' });
+          createdUrl = URL.createObjectURL(blob);
+
+          setSubtitleTrackUrl(createdUrl);
+          setSubtitleCues(cues);
+          return;
+        } catch {
+          // No subtitle file at this candidate path — try the next one
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [file.path, isAudio, isVideo]);
+
+  // Toggle native track visibility (the `default` attribute only applies on mount)
+  useEffect(() => {
+    const track = trackRef.current?.track;
+    if (track) track.mode = subtitlesEnabled ? 'showing' : 'hidden';
+  }, [subtitlesEnabled, subtitleTrackUrl]);
+
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    if (subtitleCues.length === 0) return;
+    const t = e.currentTarget.currentTime;
+    const cue = subtitleCues.find((c) => t >= c.start && t <= c.end);
+    setActiveCueText(cue?.text || '');
+  };
 
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -121,6 +236,18 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {(isAudio || isVideo) && (subtitleTrackUrl || subtitleCues.length > 0) && (
+            <button
+              onClick={() => setSubtitlesEnabled((v) => !v)}
+              title={subtitlesEnabled ? 'Hide Subtitles' : 'Show Subtitles'}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] ${
+                subtitlesEnabled ? 'bg-[var(--info-bg)] text-[var(--info-text)]' : 'hover:bg-[var(--bg-muted)] text-[var(--tx4)]'
+              }`}
+            >
+              <Captions className="w-3.5 h-3.5" />
+              <span>CC</span>
+            </button>
+          )}
           {isImage && (
             <>
               {isSvg && (
@@ -214,13 +341,29 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <h3 className="text-sm font-semibold text-[var(--tx1)] truncate max-w-xs">{file.name}</h3>
               <p className="text-xs text-[var(--tx5)] mt-1">{formatBytes(file.size)}</p>
             </div>
-            <audio src={dataUri} controls className="w-full" />
+            <audio src={dataUri} controls className="w-full" onTimeUpdate={handleTimeUpdate} />
+            {subtitleCues.length > 0 && subtitlesEnabled && (
+              <p className="text-center text-sm text-[var(--tx1)] min-h-[1.5em] px-2 whitespace-pre-line">
+                {activeCueText}
+              </p>
+            )}
           </div>
         )}
 
         {isVideo && (
           <div className="max-w-4xl max-h-full flex items-center justify-center bg-black rounded-xl overflow-hidden shadow-2xl border border-[var(--bd2)]">
-            <video src={dataUri} controls className="w-full h-full max-h-[70vh]" />
+            <video src={dataUri} controls className="w-full h-full max-h-[70vh]">
+              {subtitleTrackUrl && (
+                <track
+                  ref={trackRef}
+                  kind="subtitles"
+                  src={subtitleTrackUrl}
+                  srcLang="ko"
+                  label="자막"
+                  default
+                />
+              )}
+            </video>
           </div>
         )}
 
