@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -7,18 +7,10 @@ import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 import { parse as parseYaml } from 'yaml';
 import Editor from '@monaco-editor/react';
-import { Copy, Check, ListTree, ChevronRight } from 'lucide-react';
+import { Copy, Check, ListTree, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize2, X } from 'lucide-react';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useThemeStore } from '../../store/useThemeStore';
-
-// Initialize mermaid once
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  securityLevel: 'loose',
-  fontFamily: 'Fira Code, monospace',
-});
 
 interface MarkdownViewerProps {
   content: string;
@@ -65,9 +57,20 @@ const formatFrontmatterValue = (value: unknown): string => {
 
 // Mermaid Renderer Component
 const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
+  const theme = useThemeStore((s) => s.theme);
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Keep mermaid's own theme in sync with the app's light/dark theme
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: theme === 'light' ? 'default' : 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'Fira Code, monospace',
+    });
+  }, [theme]);
 
   useEffect(() => {
     let isMounted = true;
@@ -91,7 +94,7 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
     return () => {
       isMounted = false;
     };
-  }, [chart]);
+  }, [chart, theme]);
 
   if (error) {
     return (
@@ -103,11 +106,128 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
   }
 
   return (
+    <>
+      <div className="relative group my-4 rounded-xl border border-[var(--bd2)] bg-[var(--s4)] shadow-inner">
+        <button
+          onClick={() => setIsExpanded(true)}
+          title="Expand & Pan/Zoom"
+          className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--s6)]/90 backdrop-blur-sm border border-[var(--bd1)] text-[var(--tx4)] hover:text-[var(--tx1)] hover:bg-[var(--bg-strong)] opacity-0 group-hover:opacity-100 transition-opacity text-[11px]"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+          <span>Expand</span>
+        </button>
+        <div
+          className="p-4 overflow-x-auto flex justify-center items-center cursor-zoom-in"
+          onClick={() => setIsExpanded(true)}
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      </div>
+
+      {isExpanded && <MermaidFullscreenViewer svg={svg} onClose={() => setIsExpanded(false)} />}
+    </>
+  );
+};
+
+// Fullscreen pan/zoom viewer for a rendered Mermaid diagram
+const MermaidFullscreenViewer: React.FC<{ svg: string; onClose: () => void }> = ({ svg, onClose }) => {
+  const [zoom, setZoom] = useState(100);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -10 : 10;
+    setZoom((z) => Math.max(10, Math.min(800, z + delta)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  const resetView = () => {
+    setZoom(100);
+    setPan({ x: 0, y: 0 });
+  };
+
+  return (
     <div
-      ref={containerRef}
-      className="my-4 p-4 bg-[var(--s4)] border border-[var(--bd2)] rounded-xl overflow-x-auto flex justify-center items-center shadow-inner"
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-50 flex flex-col bg-[var(--s1)] animate-in fade-in duration-150"
+    >
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--s5)]/90 border-b border-[var(--bd2)]">
+        <span className="text-xs font-semibold text-[var(--tx3)]">Mermaid Diagram</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setZoom((z) => Math.max(10, z - 25))}
+            title="Zoom Out"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <span className="font-mono text-xs text-[var(--tx4)] w-12 text-center">{zoom}%</span>
+          <button
+            onClick={() => setZoom((z) => Math.min(800, z + 25))}
+            title="Zoom In"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={resetView}
+            title="Reset Zoom & Pan"
+            className="p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onClose}
+            title="Close (Esc)"
+            className="ml-1.5 p-1.5 rounded hover:bg-[var(--bg-muted)] text-[var(--tx4)] hover:text-[var(--tx1)]"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Pan/Zoom Canvas */}
+      <div
+        className="flex-1 overflow-hidden flex items-center justify-center select-none"
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
+        <div
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          }}
+          className="[&_svg]:max-w-none"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      </div>
+    </div>
   );
 };
 

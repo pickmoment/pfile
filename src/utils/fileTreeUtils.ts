@@ -1,6 +1,23 @@
 import { FileFilterCategory, FileMetadata } from '../types/file';
 
 /**
+ * Matches a name against a search query. If the query contains glob wildcards
+ * (`*` for any run of characters, `?` for a single character), it is matched as a
+ * full-name glob pattern; otherwise it falls back to a case-insensitive substring match.
+ */
+export function matchesSearchQuery(name: string, query: string): boolean {
+  if (!query) return true;
+
+  if (query.includes('*') || query.includes('?')) {
+    const escaped = query.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    const pattern = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
+    return new RegExp(`^${pattern}$`, 'i').test(name);
+  }
+
+  return name.toLowerCase().includes(query.toLowerCase());
+}
+
+/**
  * Filter a single file metadata item according to search, category, and hidden flags.
  */
 export function isFileVisible(
@@ -14,7 +31,7 @@ export function isFileVisible(
   }
 
   if (searchQuery) {
-    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = matchesSearchQuery(file.name, searchQuery);
     if (!matchesSearch && !file.is_dir) return false;
   }
 

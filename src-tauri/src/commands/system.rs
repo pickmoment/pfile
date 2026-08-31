@@ -14,6 +14,47 @@ pub struct QuickPathItem {
     pub kind: String,
 }
 
+/// Matches `text` against `query`. If `query` contains glob wildcards (`*` for any
+/// run of characters, `?` for a single character), it is matched as a full-string
+/// glob pattern; otherwise it falls back to a plain substring match. Both inputs
+/// are expected to already be lowercased by the caller.
+fn matches_query(text: &str, query: &str) -> bool {
+    if query.contains('*') || query.contains('?') {
+        wildcard_match(text.as_bytes(), query.as_bytes())
+    } else {
+        text.contains(query)
+    }
+}
+
+/// Classic DP-free glob matcher for `*` and `?` (case handled by the caller).
+fn wildcard_match(text: &[u8], pattern: &[u8]) -> bool {
+    let (mut ti, mut pi) = (0, 0);
+    let (mut star_idx, mut match_idx) = (None, 0);
+
+    while ti < text.len() {
+        if pi < pattern.len() && (pattern[pi] == b'?' || pattern[pi] == text[ti]) {
+            ti += 1;
+            pi += 1;
+        } else if pi < pattern.len() && pattern[pi] == b'*' {
+            star_idx = Some(pi);
+            match_idx = ti;
+            pi += 1;
+        } else if let Some(si) = star_idx {
+            pi = si + 1;
+            match_idx += 1;
+            ti = match_idx;
+        } else {
+            return false;
+        }
+    }
+
+    while pi < pattern.len() && pattern[pi] == b'*' {
+        pi += 1;
+    }
+
+    pi == pattern.len()
+}
+
 #[tauri::command]
 pub fn show_in_file_manager(path: String) -> Result<(), String> {
     let p = Path::new(&path);
@@ -190,11 +231,11 @@ pub async fn search_files_recursive(
             let file_name_lower = file_name_os.to_lowercase();
 
             if !query_lower.is_empty() {
-                if !file_name_lower.contains(&query_lower) {
+                if !matches_query(&file_name_lower, &query_lower) {
                     // Fallback: match against relative path (e.g. "src/utils")
                     let rel = entry.path().strip_prefix(root).unwrap_or(entry.path());
                     let rel_lower = rel.to_string_lossy().to_lowercase();
-                    if !rel_lower.contains(&query_lower) {
+                    if !matches_query(&rel_lower, &query_lower) {
                         continue;
                     }
                 }

@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { FileTreeNode } from './FileTreeNode';
 import { ContextMenu } from './ContextMenu';
 import { RenameDialog, DeleteConfirmDialog } from '../common/Dialogs';
 import { FileMetadata } from '../../types/file';
 import { useFileStore } from '../../store/useFileStore';
-import { getVisibleFiles } from '../../utils/fileTreeUtils';
-import { FolderSearch, Sparkles } from 'lucide-react';
+import { getVisibleFiles, isFileVisible } from '../../utils/fileTreeUtils';
+import { FolderSearch, Sparkles, Search } from 'lucide-react';
 export const FileTree: React.FC = () => {
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const files = useFileStore((s) => s.files);
@@ -16,17 +16,18 @@ export const FileTree: React.FC = () => {
   const categoryFilter = useFileStore((s) => s.categoryFilter);
   const showHiddenFiles = useFileStore((s) => s.showHiddenFiles);
   const isLoading = useFileStore((s) => s.isLoading);
+  const setSelectedFile = useFileStore((s) => s.setSelectedFile);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     file: FileMetadata;
   } | null>(null);
-
-  // Rename Dialog State
   const [renameTarget, setRenameTarget] = useState<FileMetadata | null>(null);
-
-  // Delete Dialog State
   const [deleteTargetPaths, setDeleteTargetPaths] = useState<string[] | null>(null);
+  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
+  const [directoryMatchIndex, setDirectoryMatchIndex] = useState(0);
+  const treeRef = useRef<HTMLDivElement>(null);
+  const lastDirectorySearchKeyAt = useRef(0);
 
   const handleContextMenu = (e: React.MouseEvent, file: FileMetadata) => {
     setContextMenu({
@@ -50,32 +51,78 @@ export const FileTree: React.FC = () => {
     [files, dirCache, expandedDirs, showHiddenFiles, searchQuery, categoryFilter]
   );
 
-  // Filter top-level items
-  const filteredFiles = files.filter((file) => {
-    // Hidden files check
-    if (!showHiddenFiles && (file.is_hidden || file.name.startsWith('.'))) {
-      return false;
+  const directoryMatches = useMemo(() => {
+    if (!directorySearchQuery) return [];
+    const normalizedQuery = directorySearchQuery.toLocaleLowerCase();
+    return visibleFiles.filter(
+      (file) => file.is_dir && file.name.toLocaleLowerCase().includes(normalizedQuery)
+    );
+  }, [directorySearchQuery, visibleFiles]);
+
+  const selectDirectoryMatch = (index: number, matches = directoryMatches) => {
+    const match = matches[index];
+    if (!match) return;
+
+    setSelectedFile(match);
+    requestAnimationFrame(() => {
+      const rows = treeRef.current?.querySelectorAll<HTMLElement>('[data-file-path]');
+      const row = Array.from(rows ?? []).find((element) => element.dataset.filePath === match.path);
+      row?.scrollIntoView({ block: 'nearest' });
+    });
+  };
+
+  const handleTreeKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const isInput =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      target.closest('.monaco-editor');
+    if (isInput || e.nativeEvent.isComposing) return;
+
+    if (e.key === 'Escape' && directorySearchQuery) {
+      e.preventDefault();
+      e.stopPropagation();
+      setDirectorySearchQuery('');
+      setDirectoryMatchIndex(0);
+      lastDirectorySearchKeyAt.current = 0;
+      return;
     }
 
-    if (searchQuery) {
-      const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
-      if (!matchesSearch && !file.is_dir) return false;
+    if ((e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') && directorySearchQuery) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (directoryMatches.length === 0) return;
+
+      const direction = e.key === 'ArrowUp' ? -1 : 1;
+      const nextIndex = (directoryMatchIndex + direction + directoryMatches.length) % directoryMatches.length;
+      setDirectoryMatchIndex(nextIndex);
+      selectDirectoryMatch(nextIndex);
+      return;
     }
-    if (categoryFilter !== 'ALL' && !file.is_dir) {
-      if (categoryFilter === 'MD' && file.category !== 'markdown') return false;
-      if (categoryFilter === 'CODE' && file.category !== 'code') return false;
-      if (categoryFilter === 'HTML' && file.category !== 'html') return false;
-      if (categoryFilter === 'DATA' && file.category !== 'data') return false;
-      if (
-        categoryFilter === 'MEDIA' &&
-        file.category !== 'image' &&
-        file.category !== 'audio' &&
-        file.category !== 'video'
-      )
-        return false;
-    }
-    return true;
-  });
+
+    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    const now = Date.now();
+    const nextQuery = now - lastDirectorySearchKeyAt.current <= 1000
+      ? directorySearchQuery + e.key
+      : e.key;
+    lastDirectorySearchKeyAt.current = now;
+
+    const normalizedQuery = nextQuery.toLocaleLowerCase();
+    const nextMatches = visibleFiles.filter(
+      (file) => file.is_dir && file.name.toLocaleLowerCase().includes(normalizedQuery)
+    );
+    setDirectorySearchQuery(nextQuery);
+    setDirectoryMatchIndex(0);
+    selectDirectoryMatch(0, nextMatches);
+  };
+
+  const filteredFiles = files.filter((file) =>
+    isFileVisible(file, showHiddenFiles, searchQuery, categoryFilter)
+  );
 
   if (!currentDirectory) {
     return (
@@ -99,7 +146,25 @@ export const FileTree: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-1 py-1 space-y-0.5 select-none">
+    <div
+      ref={treeRef}
+      tabIndex={0}
+      onMouseDown={() => treeRef.current?.focus()}
+      onKeyDown={handleTreeKeyDown}
+      className="relative flex-1 min-h-0 overflow-y-auto px-1 py-1 space-y-0.5 select-none outline-none"
+    >
+      {directorySearchQuery && (
+        <div className="sticky top-1 z-10 flex items-center gap-1.5 mx-1 mb-1 px-2 py-1 rounded-md bg-[var(--s6)]/95 border border-[var(--bd1)] shadow-lg text-[10px] font-mono text-[var(--tx3)] pointer-events-none">
+          <Search className="w-3 h-3 flex-shrink-0 text-[var(--info-text)]" />
+          <span className="truncate">{directorySearchQuery}</span>
+          <span className="text-[var(--tx5)] ml-auto whitespace-nowrap">
+            {directoryMatches.length > 0
+              ? `${directoryMatchIndex + 1}/${directoryMatches.length} · Enter next · Esc clear`
+              : 'No directory · Esc clear'}
+          </span>
+        </div>
+      )}
+
       {filteredFiles.length === 0 ? (
         <div className="p-6 text-center text-[var(--tx5)] text-xs">
           {searchQuery || categoryFilter !== 'ALL'

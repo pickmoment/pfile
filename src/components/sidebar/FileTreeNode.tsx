@@ -6,6 +6,7 @@ import { getFileIcon } from '../../utils/fileIcons';
 import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useGitStore } from '../../store/useGitStore';
+import { isFileVisible } from '../../utils/fileTreeUtils';
 
 interface FileTreeNodeProps {
   file: FileMetadata;
@@ -178,33 +179,14 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   };
 
   // Filter child files
-  const filteredChildren = childFiles.filter((child) => {
-    if (!showHiddenFiles && (child.is_hidden || child.name.startsWith('.'))) {
-      return false;
-    }
-    if (searchQuery) {
-      const matchesSearch = child.name.toLowerCase().includes(searchQuery.toLowerCase());
-      if (!matchesSearch && !child.is_dir) return false;
-    }
-    if (categoryFilter !== 'ALL' && !child.is_dir) {
-      if (categoryFilter === 'MD' && child.category !== 'markdown') return false;
-      if (categoryFilter === 'CODE' && child.category !== 'code') return false;
-      if (categoryFilter === 'HTML' && child.category !== 'html') return false;
-      if (categoryFilter === 'DATA' && child.category !== 'data') return false;
-      if (
-        categoryFilter === 'MEDIA' &&
-        child.category !== 'image' &&
-        child.category !== 'audio' &&
-        child.category !== 'video'
-      )
-        return false;
-    }
-    return true;
-  });
+  const filteredChildren = childFiles.filter((child) =>
+    isFileVisible(child, showHiddenFiles, searchQuery, categoryFilter)
+  );
 
   return (
     <div className="select-none text-xs">
       <div
+        data-file-path={file.path}
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
