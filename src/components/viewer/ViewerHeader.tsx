@@ -9,6 +9,7 @@ import {
   Columns,
   Save,
   Edit3,
+  X,
   Layers,
   Sparkles,
   Maximize2,
@@ -32,6 +33,7 @@ interface ViewerHeaderProps {
   tokenStats: TokenStats | null;
   onSave?: () => Promise<void>;
   hasUnsavedChanges?: boolean;
+  onExitEditing?: () => void;
 }
 
 export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
@@ -40,6 +42,7 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
   tokenStats,
   onSave,
   hasUnsavedChanges,
+  onExitEditing,
 }) => {
   const viewerMode = useViewerStore((s) => s.viewerMode);
   const setViewerMode = useViewerStore((s) => s.setViewerMode);
@@ -88,6 +91,11 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleExitEditing = () => {
+    if (hasUnsavedChanges && !window.confirm('Discard unsaved changes and exit editing mode?')) return;
+    onExitEditing?.();
   };
 
   const isTextual =
@@ -267,14 +275,25 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
         {isTextual && onSave && (
           <>
             {isEditing ? (
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all shadow-sm"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>{isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes *' : 'Saved'}</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all shadow-sm"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Changes *' : 'Saved'}</span>
+                </button>
+                <button
+                  onClick={handleExitEditing}
+                  disabled={isSaving}
+                  title="Exit editing mode"
+                  aria-label="Exit editing mode"
+                  className="p-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--bg-strong)] text-[var(--tx3)] hover:text-[var(--tx1)] text-xs transition-colors disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setIsEditing(true)}

@@ -23,6 +23,7 @@ export const ViewerContainer: React.FC = () => {
   const diffTargetFile = useViewerStore((s) => s.diffTargetFile);
   const setDiffTargetFile = useViewerStore((s) => s.setDiffTargetFile);
   const isEditing = useViewerStore((s) => s.isEditing);
+  const setIsEditing = useViewerStore((s) => s.setIsEditing);
   const contentOnly = useViewerStore((s) => s.contentOnly);
   const toggleContentOnly = useViewerStore((s) => s.toggleContentOnly);
 
@@ -65,6 +66,12 @@ export const ViewerContainer: React.FC = () => {
       await saveContent(editBuffer);
       setHasChanges(false);
     }
+  };
+
+  const handleExitEditing = () => {
+    setEditBuffer(content);
+    setHasChanges(false);
+    setIsEditing(false);
   };
 
   if (selectedPaths.length > 1 && viewBatchOverview) {
@@ -173,6 +180,7 @@ export const ViewerContainer: React.FC = () => {
           tokenStats={tokenStats}
           onSave={!isBinary ? handleSave : undefined}
           hasUnsavedChanges={hasChanges}
+          onExitEditing={handleExitEditing}
         />
       )}
 
