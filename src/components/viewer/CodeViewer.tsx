@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { WrapText, MapPin } from 'lucide-react';
 import { getLanguageFromPath } from '../../utils/formatters';
+import { getViewerFontStack } from '../../utils/fontOptions';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
@@ -21,6 +22,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   onSave,
 }) => {
   const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
+  const viewerFontFamily = useViewerStore((s) => s.viewerFontFamily);
   const theme = useThemeStore((s) => s.theme);
   const language = getLanguageFromPath(filePath);
   const [wordWrap, setWordWrap] = useState<'on' | 'off'>('on');
@@ -85,7 +87,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             readOnly: !isEditing,
             minimap: { enabled: minimapEnabled },
             fontSize: 13 * viewerFontScale / 100,
-            fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
+            fontFamily: getViewerFontStack(viewerFontFamily),
             wordWrap,
             lineNumbers: 'on',
             scrollBeyondLastLine: false,

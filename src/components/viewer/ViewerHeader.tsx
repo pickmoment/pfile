@@ -16,6 +16,7 @@ import {
   Star,
   Minus,
   Plus,
+  Type,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata, TokenStats } from '../../types/file';
@@ -25,6 +26,7 @@ import { formatFileForLlmContext } from '../../utils/llmPrompt';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useFileStore } from '../../store/useFileStore';
+import { VIEWER_FONT_OPTIONS } from '../../utils/fontOptions';
 import { Modal } from '../common/Modal';
 
 interface ViewerHeaderProps {
@@ -52,6 +54,8 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
   const toggleContentOnly = useViewerStore((s) => s.toggleContentOnly);
   const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
   const setViewerFontScale = useViewerStore((s) => s.setViewerFontScale);
+  const viewerFontFamily = useViewerStore((s) => s.viewerFontFamily);
+  const setViewerFontFamily = useViewerStore((s) => s.setViewerFontFamily);
 
   const files = useFileStore((s) => s.files);
   const favorites = useFileStore((s) => s.favorites);
@@ -206,6 +210,27 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
+        )}
+
+        {supportsFontScaling && (
+          <label
+            className="flex items-center gap-1 bg-[var(--s2)] px-1.5 py-0.5 rounded-lg border border-[var(--bd2)] text-[var(--tx4)] hover:text-[var(--tx1)] cursor-pointer"
+            title="Viewer font family"
+          >
+            <Type className="w-3.5 h-3.5 flex-shrink-0" />
+            <select
+              value={viewerFontFamily}
+              onChange={(e) => setViewerFontFamily(e.target.value)}
+              aria-label="Viewer font family"
+              className="bg-transparent text-[10.5px] font-mono text-[var(--tx3)] hover:text-[var(--tx1)] focus:outline-none cursor-pointer max-w-[7.5rem]"
+            >
+              {VIEWER_FONT_OPTIONS.map((font) => (
+                <option key={font.id} value={font.id} className="bg-[var(--s2)] text-[var(--tx1)]">
+                  {font.label}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
 
         {/* Markdown View Mode Toggle */}

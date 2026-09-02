@@ -23,8 +23,8 @@ export default {
         },
       },
       fontFamily: {
-        mono: ['"Fira Code"', '"Cascadia Code"', '"JetBrains Mono"', 'Consolas', 'monospace'],
-        sans: ['"Pretendard"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['var(--viewer-font-mono, "Fira Code")', '"Cascadia Code"', '"JetBrains Mono"', 'Consolas', 'monospace'],
+        sans: ['var(--app-font-sans, "Pretendard")', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
     },
   },

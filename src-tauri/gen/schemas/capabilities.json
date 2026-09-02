@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Default permissions for the main window, matching what Tauri grants implicitly when no capabilities file is present, plus webview zoom control for the UI scale setting.","local":true,"windows":["main"],"permissions":["core:default","core:webview:allow-set-webview-zoom","fs:default","dialog:default","opener:default"]}}

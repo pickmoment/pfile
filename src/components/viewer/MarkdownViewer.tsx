@@ -9,6 +9,7 @@ import { parse as parseYaml } from 'yaml';
 import Editor from '@monaco-editor/react';
 import { Copy, Check, ListTree, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize2, X } from 'lucide-react';
 import { useViewerStore } from '../../store/useViewerStore';
+import { getViewerFontStack } from '../../utils/fontOptions';
 import { useToastStore } from '../../store/useToastStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
@@ -58,6 +59,7 @@ const formatFrontmatterValue = (value: unknown): string => {
 // Mermaid Renderer Component
 const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
   const theme = useThemeStore((s) => s.theme);
+  const viewerFontFamily = useViewerStore((s) => s.viewerFontFamily);
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -68,9 +70,9 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
       startOnLoad: false,
       theme: theme === 'light' ? 'default' : 'dark',
       securityLevel: 'loose',
-      fontFamily: 'Fira Code, monospace',
+      fontFamily: getViewerFontStack(viewerFontFamily),
     });
-  }, [theme]);
+  }, [theme, viewerFontFamily]);
 
   useEffect(() => {
     let isMounted = true;
@@ -307,6 +309,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const showToc = useViewerStore((s) => s.showToc);
   const toggleToc = useViewerStore((s) => s.toggleToc);
   const viewerFontScale = useViewerStore((s) => s.viewerFontScale);
+  const viewerFontFamily = useViewerStore((s) => s.viewerFontFamily);
   const theme = useThemeStore((s) => s.theme);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
@@ -361,7 +364,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                 readOnly: !onChange,
                 minimap: { enabled: false },
                 fontSize: 13 * viewerFontScale / 100,
-                fontFamily: 'Fira Code, Consolas, monospace',
+                fontFamily: getViewerFontStack(viewerFontFamily),
                 wordWrap: 'on',
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,

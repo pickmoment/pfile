@@ -1,14 +1,16 @@
-import React from 'react';
-import { Sparkles, Copy, Folder, Sun, Moon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Copy, Folder, Sun, Moon, Settings } from 'lucide-react';
 import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useThemeStore } from '../../store/useThemeStore';
+import { SettingsModal } from '../common/SettingsModal';
 
 export const TitleBar: React.FC = () => {
   const currentDirectory = useFileStore((s) => s.currentDirectory);
   const showToast = useToastStore((s) => s.showToast);
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleCopyPath = () => {
     if (currentDirectory) {
@@ -57,8 +59,17 @@ export const TitleBar: React.FC = () => {
         >
           {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
         </button>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          title="Appearance settings"
+          className="p-1 rounded-md hover:bg-[var(--s6)] text-[var(--tx4)] hover:text-[var(--tx1)] transition-colors"
+        >
+          <Settings className="w-3.5 h-3.5" />
+        </button>
         <span>v0.1.0</span>
       </div>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 };
