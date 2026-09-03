@@ -7,6 +7,7 @@ import { useFileStore } from '../../store/useFileStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useGitStore } from '../../store/useGitStore';
 import { isFileVisible } from '../../utils/fileTreeUtils';
+const EMPTY_CHILD_FILES: FileMetadata[] = [];
 
 interface FileTreeNodeProps {
   file: FileMetadata;
@@ -47,7 +48,7 @@ export const FileTreeNode = React.memo(({
 
   const hasMultipleSelected = selectedCount > 1;
   const isExpanded = useFileStore((s) => s.expandedDirs.has(file.path));
-  const childFiles = useFileStore((s) => (file.is_dir ? s.dirCache[file.path] || [] : []));
+  const childFiles = useFileStore((s) => (file.is_dir ? s.dirCache[file.path] ?? EMPTY_CHILD_FILES : EMPTY_CHILD_FILES));
 
   useEffect(() => {
     if (isInlineRenaming) {
