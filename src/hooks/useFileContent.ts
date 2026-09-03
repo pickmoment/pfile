@@ -122,6 +122,8 @@ export function useFileContent(file: FileMetadata | null) {
           if (currentReqId !== requestIdRef.current) return;
           cacheText(file.path, text, file.modified_ms);
         }
+        if (currentReqId !== requestIdRef.current) return;
+        setContent(text);
         const cachedTokens = tokenCache.get(file.path);
         if (cachedTokens && cachedTokens.modified === file.modified_ms) {
           setTokenStats(cachedTokens.stats);
