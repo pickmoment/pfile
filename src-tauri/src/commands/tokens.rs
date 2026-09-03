@@ -32,7 +32,11 @@ pub fn compute_stats_for_text(text: &str) -> TokenStats {
         bpe_guard.encode_with_special_tokens(text).len()
     } else {
         // Sample first 100k characters to extrapolate token density safely without freezing CPU
-        let sample = &text[..text.char_indices().nth(MAX_DIRECT_TOKEN_CHARS).map(|(i, _)| i).unwrap_or(text.len())];
+        let sample = &text[..text
+            .char_indices()
+            .nth(MAX_DIRECT_TOKEN_CHARS)
+            .map(|(i, _)| i)
+            .unwrap_or(text.len())];
         let sample_tokens = {
             let bpe = cl100k_base_singleton();
             let bpe_guard = bpe.lock();
@@ -61,7 +65,8 @@ mod tests {
 
     #[test]
     fn test_token_stats() {
-        let sample = "Hello, world! This is a test for pfile token counting.\nLine 2 with some words.";
+        let sample =
+            "Hello, world! This is a test for pfile token counting.\nLine 2 with some words.";
         let stats = compute_stats_for_text(sample);
         assert_eq!(stats.line_count, 2);
         assert_eq!(stats.word_count, 15);

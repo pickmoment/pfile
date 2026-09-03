@@ -1,6 +1,6 @@
-use std::sync::{atomic::AtomicU64, Arc, Mutex};
-use notify_debouncer_mini::Debouncer;
 use notify::RecommendedWatcher;
+use notify_debouncer_mini::Debouncer;
+use std::sync::{atomic::AtomicU64, Arc, Mutex};
 
 pub struct AppState {
     pub watcher: Mutex<Option<Debouncer<RecommendedWatcher>>>,

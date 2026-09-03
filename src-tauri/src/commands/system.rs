@@ -1,11 +1,11 @@
+use crate::commands::fs_ops::{check_is_hidden, detect_category_and_binary, FileMetadata};
+use crate::state::AppState;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::Ordering;
 use std::time::UNIX_EPOCH;
-use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
-use crate::commands::fs_ops::{detect_category_and_binary, check_is_hidden, FileMetadata};
-use crate::state::AppState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QuickPathItem {
@@ -203,8 +203,17 @@ pub async fn search_files_recursive(
                 if e.file_type().is_dir() {
                     if matches!(
                         file_name.as_ref(),
-                        "node_modules" | "target" | "dist" | "build" | ".git" | ".next"
-                            | "__pycache__" | ".svn" | ".hg" | "vendor" | ".cache"
+                        "node_modules"
+                            | "target"
+                            | "dist"
+                            | "build"
+                            | ".git"
+                            | ".next"
+                            | "__pycache__"
+                            | ".svn"
+                            | ".hg"
+                            | "vendor"
+                            | ".cache"
                     ) {
                         return false;
                     }
@@ -305,5 +314,4 @@ mod tests {
         assert!(!paths.is_empty());
         assert_eq!(paths[0].kind, "home");
     }
-
 }
