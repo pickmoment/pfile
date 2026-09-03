@@ -1,22 +1,21 @@
-import React, { lazy, Suspense, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFileStore } from '../../store/useFileStore';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useFileContent } from '../../hooks/useFileContent';
 import { ViewerHeader } from './ViewerHeader';
+import { MarkdownViewer } from './MarkdownViewer';
+import { CodeViewer } from './CodeViewer';
+import { HtmlSandbox } from './HtmlSandbox';
+import { DataViewer } from './DataViewer';
+import { MediaViewer } from './MediaViewer';
+import { DiffViewer } from './DiffViewer';
+import { ExcelViewer } from './ExcelViewer';
+import { ArchiveViewer } from './ArchiveViewer';
+import { EpubViewer } from './EpubViewer';
+import { BatchSelectionViewer } from './BatchSelectionViewer';
 import { Sparkles, FileText, ArrowLeftRight, Binary, ExternalLink, Minimize2, CheckSquare, ChevronLeft } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters';
-
-const MarkdownViewer = lazy(() => import('./MarkdownViewer').then((module) => ({ default: module.MarkdownViewer })));
-const CodeViewer = lazy(() => import('./CodeViewer').then((module) => ({ default: module.CodeViewer })));
-const HtmlSandbox = lazy(() => import('./HtmlSandbox').then((module) => ({ default: module.HtmlSandbox })));
-const DataViewer = lazy(() => import('./DataViewer').then((module) => ({ default: module.DataViewer })));
-const MediaViewer = lazy(() => import('./MediaViewer').then((module) => ({ default: module.MediaViewer })));
-const DiffViewer = lazy(() => import('./DiffViewer').then((module) => ({ default: module.DiffViewer })));
-const ExcelViewer = lazy(() => import('./ExcelViewer').then((module) => ({ default: module.ExcelViewer })));
-const ArchiveViewer = lazy(() => import('./ArchiveViewer').then((module) => ({ default: module.ArchiveViewer })));
-const EpubViewer = lazy(() => import('./EpubViewer').then((module) => ({ default: module.EpubViewer })));
-const BatchSelectionViewer = lazy(() => import('./BatchSelectionViewer').then((module) => ({ default: module.BatchSelectionViewer })));
 export const ViewerContainer: React.FC = () => {
   const selectedFile = useFileStore((s) => s.selectedFile);
   const selectedPaths = useFileStore((s) => s.selectedPaths);
@@ -202,14 +201,6 @@ export const ViewerContainer: React.FC = () => {
 
       {/* Viewer Content Routing */}
       <div key={selectedFile.path} className="flex-1 w-full h-full overflow-hidden relative">
-        <Suspense
-          fallback={
-            <div className="w-full h-full flex items-center justify-center gap-2 text-[var(--tx5)] text-xs">
-              <Sparkles className="w-4 h-4 animate-spin text-blue-400" />
-              <span>Loading viewer…</span>
-            </div>
-          }
-        >
         {diffTargetFile ? (
           <DiffViewer
             originalFile={selectedFile}
@@ -277,7 +268,6 @@ export const ViewerContainer: React.FC = () => {
             onSave={handleSave}
           />
         )}
-        </Suspense>
       </div>
     </div>
   );
