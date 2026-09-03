@@ -23,6 +23,21 @@ interface ParsedMarkdown {
   frontmatter: Array<[string, unknown]>;
 }
 
+interface TocHeading {
+  id: string;
+  text: string;
+  level: number;
+  line: number;
+}
+
+interface HeadingNode {
+  position?: {
+    start?: {
+      line?: number;
+    };
+  };
+}
+
 const FRONTMATTER_PATTERN = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 
 const parseFrontmatter = (content: string): ParsedMarkdown => {
@@ -42,6 +57,33 @@ const parseFrontmatter = (content: string): ParsedMarkdown => {
   } catch {
     return { body: content, frontmatter: [] };
   }
+};
+
+const createHeadingSlug = (text: string): string => {
+  const slug = text
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return slug || 'heading';
+};
+
+const createUniqueHeadingId = (text: string, usedIds: Set<string>): string => {
+  const base = createHeadingSlug(text);
+  let id = base;
+  let suffix = 2;
+
+  while (usedIds.has(id)) {
+    id = `${base}-${suffix}`;
+    suffix += 1;
+  }
+
+  usedIds.add(id);
+  return id;
 };
 
 const formatFrontmatterValue = (value: unknown): string => {
@@ -315,26 +357,35 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
   const parsedMarkdown = useMemo(() => parseFrontmatter(content), [content]);
 
-  // Extract headings for Table of Contents
-  const headings = useMemo(() => {
+  // Extract headings for Table of Contents. IDs are generated once here so
+  // the TOC and rendered headings always use the same unique identifier.
+  const headings = useMemo<TocHeading[]>(() => {
     const lines = parsedMarkdown.body.split('\n');
-    const items: Array<{ id: string; text: string; level: number }> = [];
+    const items: TocHeading[] = [];
+    const usedIds = new Set<string>();
 
-    lines.forEach((line) => {
+    lines.forEach((line, index) => {
       const match = line.match(/^(#{1,4})\s+(.+)$/);
       if (match) {
         const level = match[1].length;
         const text = match[2].trim().replace(/[*_`[\]]/g, '');
-        const id = text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-');
-        items.push({ id, text, level });
+        const id = createUniqueHeadingId(text, usedIds);
+        items.push({ id, text, level, line: index + 1 });
       }
     });
 
     return items;
   }, [parsedMarkdown.body]);
+
+  const headingIdByLine = useMemo(
+    () => new Map(headings.map((heading) => [heading.line, heading.id])),
+    [headings],
+  );
+
+  const getHeadingId = (node: HeadingNode | undefined, children: React.ReactNode): string => {
+    const line = node?.position?.start?.line;
+    return (line ? headingIdByLine.get(line) : undefined) || createHeadingSlug(String(children));
+  };
 
   const scrollToHeading = (id: string) => {
     setActiveHeadingId(id);
@@ -430,21 +481,18 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                       {children}
                     </td>
                   ),
-                  h1: ({ children }) => {
-                    const text = String(children);
-                    const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h1 id={id} style={{ fontSize: 24 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-2 mb-4 mt-6">{children}</h1>;
-                  },
-                  h2: ({ children }) => {
-                    const text = String(children);
-                    const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h2 id={id} style={{ fontSize: 20 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-1 mb-3 mt-6">{children}</h2>;
-                  },
-                  h3: ({ children }) => {
-                    const text = String(children);
-                    const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                    return <h3 id={id} style={{ fontSize: 18 * viewerFontScale / 100 }} className="scroll-mt-6 font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h3>;
-                  },
+                  h1: ({ node, children }) => (
+                    <h1 id={getHeadingId(node, children)} style={{ fontSize: 24 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-2 mb-4 mt-6">{children}</h1>
+                  ),
+                  h2: ({ node, children }) => (
+                    <h2 id={getHeadingId(node, children)} style={{ fontSize: 20 * viewerFontScale / 100 }} className="scroll-mt-6 font-bold text-[var(--tx1)] border-b border-[var(--bd2)] pb-1 mb-3 mt-6">{children}</h2>
+                  ),
+                  h3: ({ node, children }) => (
+                    <h3 id={getHeadingId(node, children)} style={{ fontSize: 18 * viewerFontScale / 100 }} className="scroll-mt-6 font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h3>
+                  ),
+                  h4: ({ node, children }) => (
+                    <h4 id={getHeadingId(node, children)} className="scroll-mt-6 font-semibold text-[var(--tx2)] mb-2 mt-4">{children}</h4>
+                  ),
                   code: ({ node: _node, className, children, ...props }) => {
                     const match = /language-(\w+)/.exec(className || '');
                     const isInline = !match && !String(children).includes('\n');
