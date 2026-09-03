@@ -198,10 +198,8 @@ const MAX_TEXT_READ_BYTES: usize = 2 * 1024 * 1024; // 2MB display limit for tex
 const MAX_BINARY_PREVIEW_BYTES: u64 = 32 * 1024 * 1024;
 
 #[tauri::command]
-pub async fn read_file_text(path: String) -> Result<String, String> {
-    tokio::task::spawn_blocking(move || read_file_text_blocking(path))
-        .await
-        .map_err(|e| format!("Text read task failed: {}", e))?
+pub fn read_file_text(path: String) -> Result<String, String> {
+    read_file_text_blocking(path)
 }
 
 fn read_file_text_blocking(path: String) -> Result<String, String> {
