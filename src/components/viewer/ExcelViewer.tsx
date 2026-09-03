@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { Search, Table, Sheet, AlertTriangle } from 'lucide-react';
 import { FileMetadata } from '../../types/file';
 import { formatBytes } from '../../utils/formatters';
+const MAX_RENDERED_ROWS = 5000;
+const TABLE_ROW_HEIGHT = 32;
+const TABLE_OVERSCAN = 20;
+
 
 interface ExcelViewerProps {
   file: FileMetadata;
@@ -14,6 +18,8 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
   const [activeSheetName, setActiveSheetName] = useState<string>('');
   const [search, setSearch] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
 
   useEffect(() => {
     if (!binaryBase64) return;
@@ -54,6 +60,13 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
       r.some((cell) => String(cell ?? '').toLowerCase().includes(lower))
     );
   }, [sheetRows, search]);
+  const boundedRows = filteredRows.slice(0, MAX_RENDERED_ROWS);
+  const startIndex = Math.max(0, Math.floor(scrollTop / TABLE_ROW_HEIGHT) - TABLE_OVERSCAN);
+  const endIndex = Math.min(
+    boundedRows.length,
+    startIndex + Math.ceil(600 / TABLE_ROW_HEIGHT) + TABLE_OVERSCAN * 2,
+  );
+  const renderedRows = boundedRows.slice(startIndex, endIndex);
 
   const getColLetter = (index: number) => {
     let letter = '';
@@ -111,15 +124,17 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
       </div>
 
       {/* Spreadsheet Grid Container */}
-      <div className="flex-1 overflow-auto bg-[var(--s0)]">
+      <div
+        ref={tableRef}
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        className="flex-1 overflow-auto bg-[var(--s0)]"
+      >
         <table className="w-full text-left border-collapse text-xs font-mono">
           <thead className="bg-[var(--s5)] sticky top-0 z-10 border-b border-[var(--bd1)]">
             <tr>
-              {/* Top-left empty cell */}
               <th className="p-1.5 text-[10px] text-[var(--tx5)] font-semibold w-12 text-center bg-[var(--s3)] border-r border-b border-[var(--bd2)]">
                 #
               </th>
-              {/* Column header letters A, B, C ... */}
               {Array.from({ length: maxCols }).map((_, cIdx) => (
                 <th
                   key={cIdx}
@@ -131,13 +146,16 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--bd2)]">
-            {filteredRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-[var(--s7)] transition-colors">
-                {/* Row number header 1, 2, 3 ... */}
+            {startIndex > 0 && (
+              <tr aria-hidden="true">
+                <td colSpan={maxCols + 1} style={{ height: startIndex * TABLE_ROW_HEIGHT }} />
+              </tr>
+            )}
+            {renderedRows.map((row, rIdx) => (
+              <tr key={startIndex + rIdx} className="hover:bg-[var(--s7)] transition-colors">
                 <td className="p-1.5 text-[10px] text-[var(--tx6)] font-semibold text-center bg-[var(--s3)] border-r border-[var(--bd2)] select-none">
-                  {rIdx + 1}
+                  {startIndex + rIdx + 1}
                 </td>
-                {/* Cells */}
                 {Array.from({ length: maxCols }).map((_, cIdx) => {
                   const val = row[cIdx];
                   const strVal = val !== undefined && val !== null ? String(val) : '';
@@ -152,8 +170,18 @@ export const ExcelViewer: React.FC<ExcelViewerProps> = ({ file, binaryBase64 }) 
                 })}
               </tr>
             ))}
+            {endIndex < boundedRows.length && (
+              <tr aria-hidden="true">
+                <td colSpan={maxCols + 1} style={{ height: (boundedRows.length - endIndex) * TABLE_ROW_HEIGHT }} />
+              </tr>
+            )}
           </tbody>
         </table>
+        {boundedRows.length < filteredRows.length && (
+          <div className="px-3 py-2 text-[11px] text-[var(--warning-text)] border-t border-[var(--bd2)]">
+            Showing first {MAX_RENDERED_ROWS.toLocaleString()} of {filteredRows.length.toLocaleString()} matching rows
+          </div>
+        )}
       </div>
 
       {/* Sheet Tabs Bar */}

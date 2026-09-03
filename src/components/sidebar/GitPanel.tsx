@@ -143,11 +143,17 @@ export const GitPanel: React.FC = () => {
   const detailsRequestRef = useRef(0);
 
 
-  // Auto-refresh periodically (every 5s when panel is visible)
+  // Poll only while this mounted panel is visible; refreshGitStatus also
+  // serializes overlapping requests from navigation and file events.
   useEffect(() => {
     if (!currentDirectory || !isRepo) return;
-    const id = setInterval(() => refreshGitStatus(currentDirectory), 5000);
-    return () => clearInterval(id);
+    const refresh = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshGitStatus(currentDirectory);
+      }
+    };
+    const id = window.setInterval(refresh, 10000);
+    return () => window.clearInterval(id);
   }, [currentDirectory, isRepo, refreshGitStatus]);
 
   // Load log when tab switches

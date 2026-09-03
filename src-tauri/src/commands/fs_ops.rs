@@ -1,9 +1,9 @@
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -72,21 +72,21 @@ pub fn detect_category_and_binary(extension: Option<&str>, is_dir: bool) -> (Fil
         "pdf" | "doc" | "docx" | "ppt" | "pptx" | "epub" => (FileCategory::Document, true),
 
         // Source Code (Text)
-        "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "rs" | "py" | "go" | "java" | "c"
-        | "cpp" | "h" | "hpp" | "cs" | "rb" | "php" | "sh" | "bash" | "zsh" | "bat" | "ps1"
-        | "sql" | "css" | "scss" | "sass" | "less" | "vue" | "svelte" | "lua" | "swift"
-        | "kt" | "kts" | "dart" | "zig" | "scala" | "r" | "perl" | "dockerfile" | "proto"
-        | "graphql" | "prisma" | "lock" | "ini" | "cfg" | "conf" => (FileCategory::Code, false),
+        "ts" | "tsx" | "js" | "jsx" | "mjs" | "cjs" | "rs" | "py" | "go" | "java" | "c" | "cpp"
+        | "h" | "hpp" | "cs" | "rb" | "php" | "sh" | "bash" | "zsh" | "bat" | "ps1" | "sql"
+        | "css" | "scss" | "sass" | "less" | "vue" | "svelte" | "lua" | "swift" | "kt" | "kts"
+        | "dart" | "zig" | "scala" | "r" | "perl" | "dockerfile" | "proto" | "graphql"
+        | "prisma" | "lock" | "ini" | "cfg" | "conf" => (FileCategory::Code, false),
 
         // Archives (binary, previewable)
-        "zip" | "jar" | "war" | "ear" | "apk" | "ipa" | "whl" | "egg"
-        | "tar" | "gz" | "tgz" | "bz2" | "xz" | "zst"
-        | "rar" | "7z" | "iso" | "cab" | "deb" | "rpm" => (FileCategory::Archive, true),
+        "zip" | "jar" | "war" | "ear" | "apk" | "ipa" | "whl" | "egg" | "tar" | "gz" | "tgz"
+        | "bz2" | "xz" | "zst" | "rar" | "7z" | "iso" | "cab" | "deb" | "rpm" => {
+            (FileCategory::Archive, true)
+        }
 
         // Binary executables, databases, etc.
-        "exe" | "dll" | "so" | "dylib"
-        | "bin" | "wasm" | "parquet" | "arrow" | "db" | "sqlite" | "sqlite3"
-        | "class" | "pyc" => (FileCategory::Other, true),
+        "exe" | "dll" | "so" | "dylib" | "bin" | "wasm" | "parquet" | "arrow" | "db" | "sqlite"
+        | "sqlite3" | "class" | "pyc" => (FileCategory::Other, true),
 
         _ => (FileCategory::Other, false),
     }
@@ -115,7 +115,8 @@ pub fn check_is_hidden(_path: &Path, name: &str) -> bool {
 
 pub fn get_file_metadata<P: AsRef<Path>>(path: P) -> Result<FileMetadata, String> {
     let p = path.as_ref();
-    let meta = fs::metadata(p).map_err(|e| format!("Failed to read metadata for {:?}: {}", p, e))?;
+    let meta =
+        fs::metadata(p).map_err(|e| format!("Failed to read metadata for {:?}: {}", p, e))?;
 
     let is_dir = meta.is_dir();
     let name = p
@@ -160,7 +161,13 @@ pub fn get_file_metadata<P: AsRef<Path>>(path: P) -> Result<FileMetadata, String
 }
 
 #[tauri::command]
-pub fn list_directory(path: String) -> Result<Vec<FileMetadata>, String> {
+pub async fn list_directory(path: String) -> Result<Vec<FileMetadata>, String> {
+    tokio::task::spawn_blocking(move || list_directory_blocking(path))
+        .await
+        .map_err(|e| format!("Directory listing task failed: {}", e))?
+}
+
+fn list_directory_blocking(path: String) -> Result<Vec<FileMetadata>, String> {
     let dir_path = Path::new(&path);
     if !dir_path.exists() {
         return Err(format!("Directory does not exist: {}", path));
@@ -171,32 +178,33 @@ pub fn list_directory(path: String) -> Result<Vec<FileMetadata>, String> {
 
     let entries = fs::read_dir(dir_path).map_err(|e| format!("Failed to read directory: {}", e))?;
     let mut results = Vec::new();
-
     for entry_res in entries {
         if let Ok(entry) = entry_res {
-            let item_path = entry.path();
-            if let Ok(metadata) = get_file_metadata(&item_path) {
+            if let Ok(metadata) = get_file_metadata(entry.path()) {
                 results.push(metadata);
             }
         }
     }
 
-    // Sort: directories first, then alphabetical (case-insensitive)
-    results.sort_by(|a, b| {
-        match (a.is_dir, b.is_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-        }
+    results.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
     });
-
     Ok(results)
 }
 
 const MAX_TEXT_READ_BYTES: usize = 2 * 1024 * 1024; // 2MB display limit for text files
+const MAX_BINARY_PREVIEW_BYTES: u64 = 32 * 1024 * 1024;
 
 #[tauri::command]
-pub fn read_file_text(path: String) -> Result<String, String> {
+pub async fn read_file_text(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || read_file_text_blocking(path))
+        .await
+        .map_err(|e| format!("Text read task failed: {}", e))?
+}
+
+fn read_file_text_blocking(path: String) -> Result<String, String> {
     let p = Path::new(&path);
     if !p.exists() {
         return Err(format!("File does not exist: {}", path));
@@ -204,8 +212,6 @@ pub fn read_file_text(path: String) -> Result<String, String> {
     if p.is_dir() {
         return Err(format!("Cannot read a directory as text: {}", path));
     }
-
-    // Check extension & metadata first
     if let Ok(meta) = get_file_metadata(p) {
         if meta.is_binary {
             return Err(format!("Cannot read binary file '{}' as text", meta.name));
@@ -214,17 +220,14 @@ pub fn read_file_text(path: String) -> Result<String, String> {
 
     let file = File::open(p).map_err(|e| format!("Failed to open file: {}", e))?;
     let mut buffer = Vec::new();
-
-    // Read up to limit + 1 to check if truncated
     let mut take = file.take((MAX_TEXT_READ_BYTES + 1) as u64);
-    take.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file bytes: {}", e))?;
+    take.read_to_end(&mut buffer)
+        .map_err(|e| format!("Failed to read file bytes: {}", e))?;
 
     let is_truncated = buffer.len() > MAX_TEXT_READ_BYTES;
     if is_truncated {
         buffer.truncate(MAX_TEXT_READ_BYTES);
     }
-
-    // Quick null byte check in initial slice (if it contains null bytes, it is binary)
     let sample_len = buffer.len().min(4096);
     if buffer[..sample_len].contains(&0) {
         return Err("File appears to contain binary data".to_string());
@@ -234,17 +237,30 @@ pub fn read_file_text(path: String) -> Result<String, String> {
     if is_truncated {
         text.push_str("\n\n--- [TRUNCATED: File exceeds 2MB preview limit] ---");
     }
-
     Ok(text)
 }
 
 #[tauri::command]
-pub fn read_file_binary_base64(path: String) -> Result<String, String> {
+pub async fn read_file_binary_base64(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || read_file_binary_base64_blocking(path))
+        .await
+        .map_err(|e| format!("Binary read task failed: {}", e))?
+}
+
+fn read_file_binary_base64_blocking(path: String) -> Result<String, String> {
     let p = Path::new(&path);
     if !p.exists() {
         return Err(format!("File does not exist: {}", path));
     }
-
+    let size = fs::metadata(p)
+        .map_err(|e| format!("Failed to read binary metadata: {}", e))?
+        .len();
+    if size > MAX_BINARY_PREVIEW_BYTES {
+        return Err(format!(
+            "File too large for in-app binary preview ({} MB limit)",
+            MAX_BINARY_PREVIEW_BYTES / (1024 * 1024)
+        ));
+    }
     let bytes = fs::read(p).map_err(|e| format!("Failed to read binary file: {}", e))?;
     Ok(BASE64.encode(&bytes))
 }
@@ -300,7 +316,10 @@ pub fn rename_item(source_path: String, new_name: String) -> Result<String, Stri
     let dst = parent.join(&new_name);
 
     if dst.exists() {
-        return Err(format!("An item named '{}' already exists in this folder", new_name));
+        return Err(format!(
+            "An item named '{}' already exists in this folder",
+            new_name
+        ));
     }
 
     fs::rename(&src, &dst).map_err(|e| format!("Failed to rename: {}", e))?;
@@ -336,12 +355,20 @@ pub fn copy_items(sources: Vec<String>, target_dir: String) -> Result<Vec<String
             continue;
         }
 
-        let file_name = src.file_name().ok_or_else(|| format!("Invalid source path: {}", src_str))?;
+        let file_name = src
+            .file_name()
+            .ok_or_else(|| format!("Invalid source path: {}", src_str))?;
         let mut dest = target.join(file_name);
 
         if dest.exists() {
-            let stem = src.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-            let ext = src.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+            let stem = src
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let ext = src
+                .extension()
+                .map(|e| format!(".{}", e.to_string_lossy()))
+                .unwrap_or_default();
             let mut counter = 1;
             loop {
                 let candidate = target.join(format!("{} - Copy ({}){}", stem, counter, ext));
@@ -353,7 +380,8 @@ pub fn copy_items(sources: Vec<String>, target_dir: String) -> Result<Vec<String
             }
         }
 
-        copy_recursive(src, &dest).map_err(|e| format!("Failed to copy {:?} to {:?}: {}", src, dest, e))?;
+        copy_recursive(src, &dest)
+            .map_err(|e| format!("Failed to copy {:?} to {:?}: {}", src, dest, e))?;
         copied_paths.push(dest.to_string_lossy().to_string().replace('\\', "/"));
     }
 
@@ -375,7 +403,9 @@ pub fn move_items(sources: Vec<String>, target_dir: String) -> Result<Vec<String
             continue;
         }
 
-        let file_name = src.file_name().ok_or_else(|| format!("Invalid source path: {}", src_str))?;
+        let file_name = src
+            .file_name()
+            .ok_or_else(|| format!("Invalid source path: {}", src_str))?;
         let dest = target.join(file_name);
 
         if dest.exists() && dest != src {
@@ -407,9 +437,12 @@ pub fn delete_items(paths: Vec<String>, permanent: bool) -> Result<(), String> {
 
         if permanent {
             if p.is_dir() {
-                fs::remove_dir_all(p).map_err(|e| format!("Failed to permanently remove directory {:?}: {}", p, e))?;
+                fs::remove_dir_all(p).map_err(|e| {
+                    format!("Failed to permanently remove directory {:?}: {}", p, e)
+                })?;
             } else {
-                fs::remove_file(p).map_err(|e| format!("Failed to permanently remove file {:?}: {}", p, e))?;
+                fs::remove_file(p)
+                    .map_err(|e| format!("Failed to permanently remove file {:?}: {}", p, e))?;
             }
         } else {
             trash::delete(p).map_err(|e| format!("Failed to move {:?} to trash: {}", p, e))?;
@@ -448,7 +481,13 @@ mod tests {
 
     #[test]
     fn test_fs_operations_crud() {
-        let temp_dir = std::env::temp_dir().join(format!("pfile_test_{}", std::time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "pfile_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         fs::create_dir_all(&temp_dir).unwrap();
 
         let temp_dir_str = temp_dir.to_string_lossy().to_string();
@@ -461,21 +500,26 @@ mod tests {
 
         let dotfile = create_file(temp_dir_str.clone(), ".env.local".to_string()).unwrap();
         assert!(dotfile.is_hidden);
-        write_file_text(file_meta.path.clone(), "# Hello Pfile\nSample content".to_string()).unwrap();
-        let content = read_file_text(file_meta.path.clone()).unwrap();
+        write_file_text(
+            file_meta.path.clone(),
+            "# Hello Pfile\nSample content".to_string(),
+        )
+        .unwrap();
+        let content = read_file_text_blocking(file_meta.path.clone()).unwrap();
         assert_eq!(content, "# Hello Pfile\nSample content");
 
-        let renamed_path = rename_item(file_meta.path.clone(), "renamed_doc.md".to_string()).unwrap();
+        let renamed_path =
+            rename_item(file_meta.path.clone(), "renamed_doc.md".to_string()).unwrap();
         assert!(Path::new(&renamed_path).exists());
 
-        let items = list_directory(temp_dir_str.clone()).unwrap();
+        let items = list_directory_blocking(temp_dir_str.clone()).unwrap();
         assert_eq!(items.len(), 2);
 
         let sub_dir = create_directory(temp_dir_str.clone(), "sub_folder".to_string()).unwrap();
         let moved = move_items(vec![renamed_path, dotfile.path], sub_dir.path.clone()).unwrap();
         assert_eq!(moved.len(), 2);
         delete_items(vec![sub_dir.path], true).unwrap();
-        let final_items = list_directory(temp_dir_str.clone()).unwrap();
+        let final_items = list_directory_blocking(temp_dir_str.clone()).unwrap();
         assert_eq!(final_items.len(), 0);
 
         let _ = fs::remove_dir_all(&temp_dir);

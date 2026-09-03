@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   ChevronRight,
   ChevronDown,
@@ -11,6 +11,11 @@ import {
 import { CodeViewer } from './CodeViewer';
 import { useToastStore } from '../../store/useToastStore';
 import { useViewerStore } from '../../store/useViewerStore';
+const MAX_JSON_CHILDREN = 1000;
+const MAX_TABLE_RENDER_ROWS = 5000;
+const TABLE_ROW_HEIGHT = 32;
+const TABLE_OVERSCAN = 20;
+
 
 interface DataViewerProps {
   filePath: string;
@@ -39,11 +44,11 @@ const JsonTreeNode: React.FC<{
   };
 
   if (isObject) {
+    const count = Array.isArray(value) ? value.length : Object.keys(value as Record<string, unknown>).length;
     const entries = isArray
-      ? (value as unknown[]).map((v, i) => [i.toString(), v] as const)
-      : Object.entries(value as Record<string, unknown>);
-
-    const count = entries.length;
+      ? (value as unknown[]).slice(0, MAX_JSON_CHILDREN).map((v, i) => [i.toString(), v] as const)
+      : Object.entries(value as Record<string, unknown>).slice(0, MAX_JSON_CHILDREN);
+    const hasMoreEntries = entries.length < count;
 
     return (
       <div className="font-mono select-text">
@@ -90,6 +95,14 @@ const JsonTreeNode: React.FC<{
                 search={search}
               />
             ))}
+            {hasMoreEntries && (
+              <div
+                style={{ paddingLeft: `${depth * 14 + 16}px` }}
+                className="text-[var(--warning-text)] py-1 text-[11px]"
+              >
+                Showing first {MAX_JSON_CHILDREN.toLocaleString()} of {count.toLocaleString()} entries
+              </div>
+            )}
             <div
               style={{ paddingLeft: `${depth * 14 + 16}px` }}
               className="text-[var(--tx4)] py-0.5"
@@ -139,6 +152,9 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: nu
   fontSize,
 }) => {
   const [filter, setFilter] = useState('');
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
 
   const { headers, rows } = useMemo(() => {
     const lines = content.trim().split('\n').filter((l) => l.trim().length > 0);
@@ -174,6 +190,13 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: nu
     const lower = filter.toLowerCase();
     return rows.filter((r) => r.some((cell) => cell.toLowerCase().includes(lower)));
   }, [rows, filter]);
+  const boundedRows = filteredRows.slice(0, MAX_TABLE_RENDER_ROWS);
+  const startIndex = Math.max(0, Math.floor(scrollTop / TABLE_ROW_HEIGHT) - TABLE_OVERSCAN);
+  const endIndex = Math.min(
+    boundedRows.length,
+    startIndex + Math.ceil(600 / TABLE_ROW_HEIGHT) + TABLE_OVERSCAN * 2,
+  );
+  const renderedRows = boundedRows.slice(startIndex, endIndex);
 
   return (
     <div className="w-full h-full flex flex-col bg-[var(--s2)] overflow-hidden">
@@ -198,7 +221,11 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: nu
       </div>
 
       {/* Table Body */}
-      <div className="flex-1 overflow-auto">
+      <div
+        ref={tableRef}
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        className="flex-1 overflow-auto"
+      >
         <table style={{ fontSize }} className="w-full text-left border-collapse font-mono">
           <thead className="bg-[var(--s5)] sticky top-0 z-10 border-b border-[var(--bd1)]">
             <tr>
@@ -213,10 +240,13 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: nu
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--bd2)]">
-            {filteredRows.map((row, rIdx) => (
+            {startIndex > 0 && (
+              <tr aria-hidden="true"><td colSpan={headers.length + 1} style={{ height: startIndex * TABLE_ROW_HEIGHT }} /></tr>
+            )}
+            {renderedRows.map((row, rIdx) => (
               <tr key={rIdx} className="hover:bg-[var(--s7)] transition-colors">
                 <td className="p-2 text-[11px] text-[var(--tx6)] border-r border-[var(--bd2)]">
-                  {rIdx + 1}
+                  {startIndex + rIdx + 1}
                 </td>
                 {row.map((cell, cIdx) => (
                   <td key={cIdx} className="p-2 text-[var(--tx3)] border-r border-[var(--bd2)] max-w-xs truncate">
@@ -225,8 +255,16 @@ const CsvTableView: React.FC<{ content: string; delimiter?: string; fontSize: nu
                 ))}
               </tr>
             ))}
+            {endIndex < boundedRows.length && (
+              <tr aria-hidden="true"><td colSpan={headers.length + 1} style={{ height: (boundedRows.length - endIndex) * TABLE_ROW_HEIGHT }} /></tr>
+            )}
           </tbody>
         </table>
+        {boundedRows.length < filteredRows.length && (
+          <div className="px-3 py-2 text-[11px] text-[var(--warning-text)] border-t border-[var(--bd2)]">
+            Showing first {MAX_TABLE_RENDER_ROWS.toLocaleString()} of {filteredRows.length.toLocaleString()} matching rows
+          </div>
+        )}
       </div>
     </div>
   );

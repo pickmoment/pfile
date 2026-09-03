@@ -47,6 +47,10 @@ interface GitStore {
   getFileStatus: (absPath: string) => GitFileStatus | undefined;
   reset: () => void;
 }
+let gitStatusInFlight: Promise<void> | null = null;
+let queuedGitStatusPath: string | null = null;
+let gitStatusGeneration = 0;
+
 
 export const useGitStore = create<GitStore>((set, get) => ({
   isRepo: false,
@@ -69,36 +73,55 @@ export const useGitStore = create<GitStore>((set, get) => ({
   gitPanelTab: 'changes',
 
   refreshGitStatus: async (path: string) => {
-    try {
-      const info: GitRepoInfo = await invoke('git_repo_info', { path });
-      set({
-        isRepo: info.is_repo,
-        repoRoot: info.repo_root,
-        branch: info.branch,
-        isDetached: info.is_detached,
-        ahead: info.ahead,
-        behind: info.behind,
-        files: info.files,
-        stagedCount: info.staged_count,
-        modifiedCount: info.modified_count,
-        untrackedCount: info.untracked_count,
-        conflictedCount: info.conflicted_count,
-      });
-    } catch {
-      set({
-        isRepo: false,
-        repoRoot: null,
-        branch: null,
-        isDetached: false,
-        ahead: 0,
-        behind: 0,
-        files: [],
-        stagedCount: 0,
-        modifiedCount: 0,
-        untrackedCount: 0,
-        conflictedCount: 0,
-      });
-    }
+    queuedGitStatusPath = path;
+    gitStatusGeneration += 1;
+
+    if (gitStatusInFlight) return gitStatusInFlight;
+
+    gitStatusInFlight = (async () => {
+      while (queuedGitStatusPath) {
+        const requestPath = queuedGitStatusPath;
+        queuedGitStatusPath = null;
+        const generationAtStart = gitStatusGeneration;
+
+        try {
+          const info: GitRepoInfo = await invoke('git_repo_info', { path: requestPath });
+          if (generationAtStart !== gitStatusGeneration) continue;
+          set({
+            isRepo: info.is_repo,
+            repoRoot: info.repo_root,
+            branch: info.branch,
+            isDetached: info.is_detached,
+            ahead: info.ahead,
+            behind: info.behind,
+            files: info.files,
+            stagedCount: info.staged_count,
+            modifiedCount: info.modified_count,
+            untrackedCount: info.untracked_count,
+            conflictedCount: info.conflicted_count,
+          });
+        } catch {
+          if (generationAtStart !== gitStatusGeneration) continue;
+          set({
+            isRepo: false,
+            repoRoot: null,
+            branch: null,
+            isDetached: false,
+            ahead: 0,
+            behind: 0,
+            files: [],
+            stagedCount: 0,
+            modifiedCount: 0,
+            untrackedCount: 0,
+            conflictedCount: 0,
+          });
+        }
+      }
+    })().finally(() => {
+      gitStatusInFlight = null;
+    });
+
+    return gitStatusInFlight;
   },
 
   loadLog: async (path: string) => {

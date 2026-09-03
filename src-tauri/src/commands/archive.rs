@@ -45,8 +45,7 @@ fn read_zip(path: &Path) -> Result<ArchiveInfo, String> {
                 dt.day() as u32,
             )?
             .and_hms_opt(dt.hour() as u32, dt.minute() as u32, dt.second() as u32)?;
-            let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1)?
-                .and_hms_opt(0, 0, 0)?;
+            let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1)?.and_hms_opt(0, 0, 0)?;
             Some(((file_dt - epoch).num_milliseconds()).max(0) as u64)
         });
 
@@ -198,7 +197,13 @@ fn detect_format(path: &Path) -> &'static str {
 // ── Commands ────────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn archive_list(path: String) -> Result<ArchiveInfo, String> {
+pub async fn archive_list(path: String) -> Result<ArchiveInfo, String> {
+    tokio::task::spawn_blocking(move || archive_list_blocking(path))
+        .await
+        .map_err(|e| format!("Archive list task failed: {}", e))?
+}
+
+fn archive_list_blocking(path: String) -> Result<ArchiveInfo, String> {
     let p = Path::new(&path);
     match detect_format(p) {
         "zip" => read_zip(p),
@@ -209,9 +214,17 @@ pub fn archive_list(path: String) -> Result<ArchiveInfo, String> {
         fmt => Err(format!("Unsupported archive format: {}", fmt)),
     }
 }
-
 #[tauri::command]
-pub fn archive_extract_file(
+pub async fn archive_extract_file(
+    archive_path: String,
+    entry_path: String,
+) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || archive_extract_file_blocking(archive_path, entry_path))
+        .await
+        .map_err(|e| format!("Archive preview task failed: {}", e))?
+}
+
+fn archive_extract_file_blocking(
     archive_path: String,
     entry_path: String,
 ) -> Result<String, String> {
@@ -223,7 +236,7 @@ pub fn archive_extract_file(
         "tar" | "tar.gz" | "gz" | "tar.bz2" | "bz2" | "tar.xz" | "xz" => {
             extract_tar_file(p, fmt, &entry_path)
         }
-        _ => Err(format!("Unsupported format: {}", fmt)),
+        _ => Err(format!("Unsupported archive format: {}", fmt)),
     }
 }
 
@@ -300,10 +313,13 @@ fn extract_from_tar<R: Read>(reader: R, entry_path: &str) -> Result<String, Stri
 }
 
 #[tauri::command]
-pub fn archive_extract_to(
-    archive_path: String,
-    dest_dir: String,
-) -> Result<u32, String> {
+pub async fn archive_extract_to(archive_path: String, dest_dir: String) -> Result<u32, String> {
+    tokio::task::spawn_blocking(move || archive_extract_to_blocking(archive_path, dest_dir))
+        .await
+        .map_err(|e| format!("Archive extraction task failed: {}", e))?
+}
+
+fn archive_extract_to_blocking(archive_path: String, dest_dir: String) -> Result<u32, String> {
     let p = Path::new(&archive_path);
     let dest = Path::new(&dest_dir);
 
@@ -312,7 +328,6 @@ pub fn archive_extract_to(
     }
 
     let fmt = detect_format(p);
-
     match fmt {
         "zip" => extract_zip_all(p, dest),
         "tar" | "tar.gz" | "gz" | "tar.bz2" | "bz2" | "tar.xz" | "xz" => {
@@ -362,12 +377,13 @@ fn extract_tar_all(path: &Path, fmt: &str, dest: &Path) -> Result<u32, String> {
 
 fn unpack_tar<R: Read>(reader: R, dest: &Path) -> Result<u32, String> {
     let mut archive = tar::Archive::new(reader);
-    archive.unpack(dest).map_err(|e| e.to_string())?;
-    // Count files extracted (approximate from walk)
-    let count = walkdir::WalkDir::new(dest)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .count();
-    Ok(count as u32)
+    let mut count = 0u32;
+    for entry_result in archive.entries().map_err(|e| e.to_string())? {
+        let mut entry = entry_result.map_err(|e| e.to_string())?;
+        if !entry.header().entry_type().is_dir() {
+            count = count.saturating_add(1);
+        }
+        entry.unpack_in(dest).map_err(|e| e.to_string())?;
+    }
+    Ok(count)
 }

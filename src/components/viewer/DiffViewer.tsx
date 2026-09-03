@@ -3,6 +3,8 @@ import { diffLines, Change } from 'diff';
 import { invoke } from '@tauri-apps/api/core';
 import { Columns, AlignJustify, X, Plus, Minus, GitCompare } from 'lucide-react';
 import { FileMetadata } from '../../types/file';
+const MAX_DIFF_COMPUTE_CHARS = 1_500_000;
+
 import { useViewerStore } from '../../store/useViewerStore';
 
 interface DiffViewerProps {
@@ -47,10 +49,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
     };
   }, [targetFile.path]);
 
-  // Compute diff
+  const diffTooLarge =
+    originalContent.length > MAX_DIFF_COMPUTE_CHARS || targetContent.length > MAX_DIFF_COMPUTE_CHARS;
   const changes = useMemo(() => {
+    if (diffTooLarge) return [];
     return diffLines(originalContent, targetContent);
-  }, [originalContent, targetContent]);
+  }, [diffTooLarge, originalContent, targetContent]);
 
   // Stats
   const { addedCount, removedCount } = useMemo(() => {
@@ -134,6 +138,11 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center text-[var(--tx5)] text-xs">
           Calculating diff...
+        </div>
+      ) : diffTooLarge ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-[var(--tx5)] text-xs p-6 text-center">
+          <p className="text-[var(--warning-text)] font-semibold">Diff preview skipped for very large files.</p>
+          <p>Files larger than {(MAX_DIFF_COMPUTE_CHARS / 1_000_000).toFixed(1)} MB are opened in the source viewer to keep the app responsive.</p>
         </div>
       ) : diffMode === 'side-by-side' ? (
         <SideBySideDiff originalContent={originalContent} targetContent={targetContent} fontSize={11.5 * viewerFontScale / 100} />

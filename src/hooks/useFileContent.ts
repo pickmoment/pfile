@@ -2,8 +2,40 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata, TokenStats } from '../types/file';
 
-const textCache = new Map<string, { content: string; modified: number }>();
+type TextCacheEntry = { content: string; modified: number; bytes: number };
+
+const MAX_TEXT_CACHE_BYTES = 32 * 1024 * 1024;
+const MAX_TEXT_CACHE_ENTRIES = 32;
+const MAX_TOKEN_CACHE_ENTRIES = 256;
+let textCacheBytes = 0;
+const textCache = new Map<string, TextCacheEntry>();
 const tokenCache = new Map<string, { stats: TokenStats; modified: number }>();
+
+function cacheText(path: string, content: string, modified: number) {
+  const previous = textCache.get(path);
+  if (previous) textCacheBytes -= previous.bytes;
+  const entry = { content, modified, bytes: content.length * 2 };
+  textCache.delete(path);
+  textCache.set(path, entry);
+  textCacheBytes += entry.bytes;
+
+  while (textCache.size > MAX_TEXT_CACHE_ENTRIES || textCacheBytes > MAX_TEXT_CACHE_BYTES) {
+    const oldest = textCache.entries().next().value as [string, TextCacheEntry] | undefined;
+    if (!oldest) break;
+    textCache.delete(oldest[0]);
+    textCacheBytes -= oldest[1].bytes;
+  }
+}
+
+function cacheTokens(path: string, stats: TokenStats, modified: number) {
+  tokenCache.delete(path);
+  tokenCache.set(path, { stats, modified });
+  while (tokenCache.size > MAX_TOKEN_CACHE_ENTRIES) {
+    const oldest = tokenCache.keys().next().value as string | undefined;
+    if (oldest === undefined) break;
+    tokenCache.delete(oldest);
+  }
+}
 
 export function useFileContent(file: FileMetadata | null) {
   const [content, setContent] = useState<string>('');
@@ -58,12 +90,9 @@ export function useFileContent(file: FileMetadata | null) {
         setContent('');
         setTokenStats(null);
 
-        // Only fetch binary base64 if needed for media/excel/pdf preview
+        // Media and PDF viewers stream the original file through Tauri's
+        // asset URL. Only spreadsheet parsers still need binary IPC data.
         const isPreviewableBinary =
-          file.category === 'image' ||
-          file.category === 'audio' ||
-          file.category === 'video' ||
-          ext === 'pdf' ||
           ext === 'xlsx' ||
           ext === 'xls' ||
           ext === 'xlsm' ||
@@ -80,30 +109,30 @@ export function useFileContent(file: FileMetadata | null) {
       } else {
         setBinaryBase64('');
 
-        // Check text cache
+        // Check the bounded text cache.
         const cached = textCache.get(file.path);
         let text = '';
         if (cached && cached.modified === file.modified_ms) {
           text = cached.content;
+          // Refresh insertion order so frequently opened files stay resident.
+          textCache.delete(file.path);
+          textCache.set(file.path, cached);
         } else {
           text = await invoke('read_file_text', { path: file.path });
           if (currentReqId !== requestIdRef.current) return;
-          textCache.set(file.path, { content: text, modified: file.modified_ms });
+          cacheText(file.path, text, file.modified_ms);
         }
-
-        if (currentReqId !== requestIdRef.current) return;
-        setContent(text);
-
-        // Compute tokens asynchronously without blocking UI
         const cachedTokens = tokenCache.get(file.path);
         if (cachedTokens && cachedTokens.modified === file.modified_ms) {
           setTokenStats(cachedTokens.stats);
+          tokenCache.delete(file.path);
+          tokenCache.set(file.path, cachedTokens);
         } else {
           try {
             const stats: TokenStats = await invoke('calculate_tokens', { text });
             if (currentReqId === requestIdRef.current) {
               setTokenStats(stats);
-              tokenCache.set(file.path, { stats, modified: file.modified_ms });
+              cacheTokens(file.path, stats, file.modified_ms);
             }
           } catch (tErr) {
             console.warn('Failed to calculate tokens:', tErr);
@@ -131,13 +160,13 @@ export function useFileContent(file: FileMetadata | null) {
       if (!file || isBinary) return;
       try {
         await invoke('write_file_text', { path: file.path, content: newContent });
-        textCache.set(file.path, { content: newContent, modified: Date.now() });
+        const modified = Date.now();
+        cacheText(file.path, newContent, modified);
         setContent(newContent);
 
-        // Recalculate tokens
         const stats: TokenStats = await invoke('calculate_tokens', { text: newContent });
         setTokenStats(stats);
-        tokenCache.set(file.path, { stats, modified: Date.now() });
+        cacheTokens(file.path, stats, modified);
       } catch (err: unknown) {
         console.error('Failed to save file:', err);
         throw err;

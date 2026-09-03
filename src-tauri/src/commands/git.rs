@@ -320,7 +320,26 @@ fn format_patch(diff: &Diff<'_>) -> Result<String, String> {
 // ── Commands ────────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn git_repo_info(path: String) -> GitRepoInfo {
+pub async fn git_repo_info(path: String) -> GitRepoInfo {
+    match tokio::task::spawn_blocking(move || git_repo_info_blocking(path)).await {
+        Ok(info) => info,
+        Err(_) => GitRepoInfo {
+            is_repo: false,
+            repo_root: None,
+            branch: None,
+            is_detached: false,
+            ahead: 0,
+            behind: 0,
+            files: vec![],
+            staged_count: 0,
+            modified_count: 0,
+            untracked_count: 0,
+            conflicted_count: 0,
+        },
+    }
+}
+
+fn git_repo_info_blocking(path: String) -> GitRepoInfo {
     let repo = match open_repo(&path) {
         Ok(r) => r,
         Err(_) => {

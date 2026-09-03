@@ -57,6 +57,11 @@ const HIDDEN_KEY = 'pfile_show_hidden';
 
 const FAVORITES_KEY = 'pfile_favorites';
 const RECENT_KEY = 'pfile_recent_dirs';
+let directoryRefreshInFlight: Promise<void> | null = null;
+let directoryRefreshQueued = false;
+let workspaceInitInFlight: Promise<void> | null = null;
+let directoryNavigationGeneration = 0;
+
 
 function getStored(key: string): string[] {
   try {
@@ -99,13 +104,21 @@ export const useFileStore = create<FileStore>((set, get) => ({
   canGoForward: false,
 
   initWorkspace: async () => {
-    try {
-      await get().loadQuickPaths();
-      const home: string = await invoke('get_home_dir');
-      await get().setCurrentDirectory(home);
-    } catch {
-      await get().setCurrentDirectory('.');
-    }
+    if (workspaceInitInFlight) return workspaceInitInFlight;
+
+    workspaceInitInFlight = (async () => {
+      try {
+        await get().loadQuickPaths();
+        const home: string = await invoke('get_home_dir');
+        await get().setCurrentDirectory(home);
+      } catch {
+        await get().setCurrentDirectory('.');
+      }
+    })().finally(() => {
+      workspaceInitInFlight = null;
+    });
+
+    return workspaceInitInFlight;
   },
 
   loadQuickPaths: async () => {
@@ -119,10 +132,12 @@ export const useFileStore = create<FileStore>((set, get) => ({
 
   setCurrentDirectory: async (dir: string, pushHistory = true) => {
     const normalized = dir.replace(/\\/g, '/').replace(/\/+$/, '') || '/';
+    const navigationGeneration = ++directoryNavigationGeneration;
     set({ isLoading: true });
 
     try {
       const items: FileMetadata[] = await invoke('list_directory', { path: normalized });
+      if (navigationGeneration !== directoryNavigationGeneration) return;
 
       try {
         await invoke('start_watch', { path: normalized });
@@ -171,38 +186,51 @@ export const useFileStore = create<FileStore>((set, get) => ({
       });
     } catch (err) {
       console.error('Failed to load directory:', err);
-      set({ isLoading: false });
+      if (navigationGeneration === directoryNavigationGeneration) {
+        set({ isLoading: false });
+      }
       throw err;
     }
   },
 
   refreshDirectory: async () => {
-    const { currentDirectory, expandedDirs } = get();
-    if (!currentDirectory) return;
+    if (directoryRefreshInFlight) {
+      directoryRefreshQueued = true;
+      return directoryRefreshInFlight;
+    }
 
-    try {
+    const performRefresh = async () => {
+      const { currentDirectory, expandedDirs } = get();
+      if (!currentDirectory) return;
+
       const items: FileMetadata[] = await invoke('list_directory', { path: currentDirectory });
-      const newCache: Record<string, FileMetadata[]> = { [currentDirectory]: items };
-
-      for (const dir of expandedDirs) {
-        if (dir !== currentDirectory) {
+      const childDirs = [...expandedDirs].filter((dir) => dir !== currentDirectory);
+      const childResults = await Promise.all(
+        childDirs.map(async (dir) => {
           try {
-            const childItems: FileMetadata[] = await invoke('list_directory', { path: dir });
-            newCache[dir] = childItems;
+            return [dir, await invoke<FileMetadata[]>('list_directory', { path: dir })] as const;
           } catch {
-            // ignore
+            return null;
           }
-        }
-      }
+        }),
+      );
+
+      // Navigation may have changed while the filesystem calls were pending.
+      if (get().currentDirectory !== currentDirectory) return;
 
       set((state) => {
+        const newCache: Record<string, FileMetadata[]> = { [currentDirectory]: items };
+        for (const result of childResults) {
+          if (result) newCache[result[0]] = result[1];
+        }
+
         let updatedSelected = state.selectedFile;
         if (updatedSelected) {
-          const allLoaded = Object.values(newCache).flat();
-          const match = allLoaded.find((f) => f.path === updatedSelected?.path);
-          if (match) {
-            updatedSelected = match;
+          const fileMap = new Map<string, FileMetadata>();
+          for (const loadedItems of Object.values(newCache)) {
+            for (const item of loadedItems) fileMap.set(item.path, item);
           }
+          updatedSelected = fileMap.get(updatedSelected.path) ?? updatedSelected;
         }
 
         return {
@@ -211,9 +239,22 @@ export const useFileStore = create<FileStore>((set, get) => ({
           selectedFile: updatedSelected,
         };
       });
-    } catch (err) {
-      console.error('Failed to refresh directory:', err);
-    }
+    };
+
+    directoryRefreshInFlight = (async () => {
+      do {
+        directoryRefreshQueued = false;
+        try {
+          await performRefresh();
+        } catch (err) {
+          console.error('Failed to refresh directory:', err);
+        }
+      } while (directoryRefreshQueued);
+    })().finally(() => {
+      directoryRefreshInFlight = null;
+    });
+
+    return directoryRefreshInFlight;
   },
 
   goBack: async () => {

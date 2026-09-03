@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -12,6 +12,10 @@ import { useViewerStore } from '../../store/useViewerStore';
 import { getViewerFontStack } from '../../utils/fontOptions';
 import { useToastStore } from '../../store/useToastStore';
 import { useThemeStore } from '../../store/useThemeStore';
+const MERMAID_CACHE_LIMIT = 32;
+const mermaidSvgCache = new Map<string, string>();
+let mermaidConfigKey = '';
+
 
 interface MarkdownViewerProps {
   content: string;
@@ -106,23 +110,42 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Keep mermaid's own theme in sync with the app's light/dark theme
   useEffect(() => {
+    const configKey = `${theme}:${viewerFontFamily}`;
+    if (mermaidConfigKey === configKey) return;
     mermaid.initialize({
       startOnLoad: false,
       theme: theme === 'light' ? 'default' : 'dark',
       securityLevel: 'loose',
       fontFamily: getViewerFontStack(viewerFontFamily),
     });
+    mermaidConfigKey = configKey;
   }, [theme, viewerFontFamily]);
 
   useEffect(() => {
     let isMounted = true;
+    const cacheKey = `${theme}:${viewerFontFamily}:${chart}`;
+    const cachedSvg = mermaidSvgCache.get(cacheKey);
+    if (cachedSvg) {
+      setSvg(cachedSvg);
+      setError(null);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const renderChart = async () => {
       try {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart);
         if (isMounted) {
+          mermaidSvgCache.delete(cacheKey);
+          mermaidSvgCache.set(cacheKey, renderedSvg);
+          while (mermaidSvgCache.size > MERMAID_CACHE_LIMIT) {
+            const oldest = mermaidSvgCache.keys().next().value as string | undefined;
+            if (oldest === undefined) break;
+            mermaidSvgCache.delete(oldest);
+          }
           setSvg(renderedSvg);
           setError(null);
         }
@@ -134,11 +157,11 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
       }
     };
 
-    renderChart();
+    void renderChart();
     return () => {
       isMounted = false;
     };
-  }, [chart, theme]);
+  }, [chart, theme, viewerFontFamily]);
 
   if (error) {
     return (
@@ -355,7 +378,9 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const theme = useThemeStore((s) => s.theme);
 
   const [activeHeadingId, setActiveHeadingId] = useState<string>('');
-  const parsedMarkdown = useMemo(() => parseFrontmatter(content), [content]);
+  const deferredContent = useDeferredValue(content);
+  const previewContent = isEditing ? deferredContent : content;
+  const parsedMarkdown = useMemo(() => parseFrontmatter(previewContent), [previewContent]);
 
   // Extract headings for Table of Contents. IDs are generated once here so
   // the TOC and rendered headings always use the same unique identifier.

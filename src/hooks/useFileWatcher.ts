@@ -5,36 +5,38 @@ import { WatcherEventPayload } from '../types/tauri-events';
 
 export function useFileWatcher() {
   const refreshDirectory = useFileStore((s) => s.refreshDirectory);
-  const selectedFile = useFileStore((s) => s.selectedFile);
 
   useEffect(() => {
+    let disposed = false;
     let unlisten: UnlistenFn | undefined;
     let debounceTimer: number | undefined;
 
     const setupListener = async () => {
       try {
-        unlisten = await listen<WatcherEventPayload>('file-watcher-event', (event) => {
+        const cleanup = await listen<WatcherEventPayload>('file-watcher-event', () => {
           clearTimeout(debounceTimer);
-
           debounceTimer = window.setTimeout(() => {
-            refreshDirectory();
-            if (selectedFile && event.payload.paths.includes(selectedFile.path)) {
-              refreshDirectory();
-            }
+            // One refresh updates both directory metadata and the selected file.
+            void refreshDirectory();
           }, 150);
         });
+
+        if (disposed) {
+          cleanup();
+        } else {
+          unlisten = cleanup;
+        }
       } catch (err: unknown) {
-        console.warn('Could not attach file watcher listener:', err);
+        if (!disposed) console.warn('Could not attach file watcher listener:', err);
       }
     };
 
-    setupListener();
+    void setupListener();
 
     return () => {
+      disposed = true;
       clearTimeout(debounceTimer);
-      if (unlisten) {
-        unlisten();
-      }
+      unlisten?.();
     };
-  }, [refreshDirectory, selectedFile]);
+  }, [refreshDirectory]);
 }

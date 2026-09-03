@@ -6,6 +6,9 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 use zip::ZipArchive;
 
+const MAX_EPUB_IMAGE_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_EPUB_IMAGE_TOTAL_BYTES: u64 = 64 * 1024 * 1024;
+
 // ── Types ───────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -67,7 +70,17 @@ struct ManifestItem {
     media_type: String,
 }
 
-fn parse_opf(opf_xml: &str) -> (Vec<ManifestItem>, Vec<String>, String, String, String, String, Option<String>) {
+fn parse_opf(
+    opf_xml: &str,
+) -> (
+    Vec<ManifestItem>,
+    Vec<String>,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+) {
     let mut manifest = Vec::new();
     let mut spine_ids = Vec::new();
     let mut title = String::new();
@@ -128,7 +141,15 @@ fn parse_opf(opf_xml: &str) -> (Vec<ManifestItem>, Vec<String>, String, String, 
         }
     }
 
-    (manifest, spine_ids, title, author, language, description, cover_id)
+    (
+        manifest,
+        spine_ids,
+        title,
+        author,
+        language,
+        description,
+        cover_id,
+    )
 }
 
 fn html_entities_decode(s: &str) -> String {
@@ -205,7 +226,9 @@ fn parse_nav_toc(nav_html: &str) -> Vec<EpubTocEntry> {
             Some(p) => tag_end + p,
             None => break,
         };
-        let text = strip_html_tags(&nav_section[tag_end + 1..close]).trim().to_string();
+        let text = strip_html_tags(&nav_section[tag_end + 1..close])
+            .trim()
+            .to_string();
         if !text.is_empty() {
             toc.push(EpubTocEntry {
                 title: html_entities_decode(&text),
@@ -289,7 +312,9 @@ fn resolve_path(base_dir: &str, relative: &str) -> String {
 
     for seg in relative.split('/') {
         match seg {
-            ".." => { parts.pop(); }
+            ".." => {
+                parts.pop();
+            }
             "." | "" => {}
             s => parts.push(s),
         }
@@ -301,17 +326,27 @@ fn resolve_path(base_dir: &str, relative: &str) -> String {
 // ── Main Command ────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn epub_read(path: String) -> Result<EpubContent, String> {
+pub async fn epub_read(path: String) -> Result<EpubContent, String> {
+    tokio::task::spawn_blocking(move || epub_read_blocking(path))
+        .await
+        .map_err(|e| format!("EPUB read task failed: {}", e))?
+}
+
+fn epub_read_blocking(path: String) -> Result<EpubContent, String> {
     let p = Path::new(&path);
     let file = File::open(p).map_err(|e| format!("Failed to open: {}", e))?;
     let reader = BufReader::new(file);
-    let mut archive = ZipArchive::new(reader).map_err(|e| format!("Invalid EPUB (not a valid ZIP): {}", e))?;
+    let mut archive =
+        ZipArchive::new(reader).map_err(|e| format!("Invalid EPUB (not a valid ZIP): {}", e))?;
 
     // 1. Read container.xml to find OPF path
     let container_xml = read_zip_text(&mut archive, "META-INF/container.xml")?;
-    let opf_path = extract_attr(&container_xml, "full-path")
-        .ok_or("Cannot find rootfile in container.xml")?;
-    let opf_dir = opf_path.rsplit_once('/').map(|(d, _)| d.to_string()).unwrap_or_default();
+    let opf_path =
+        extract_attr(&container_xml, "full-path").ok_or("Cannot find rootfile in container.xml")?;
+    let opf_dir = opf_path
+        .rsplit_once('/')
+        .map(|(d, _)| d.to_string())
+        .unwrap_or_default();
 
     // 2. Read & parse OPF
     let opf_xml = read_zip_text(&mut archive, &opf_path)?;
@@ -319,6 +354,7 @@ pub fn epub_read(path: String) -> Result<EpubContent, String> {
 
     // 3. Build resource map (images, CSS, etc.)
     let mut resources: HashMap<String, (String, Vec<u8>)> = HashMap::new();
+    let mut image_bytes_loaded = 0u64;
     let mut css_parts: Vec<String> = Vec::new();
     let mut toc_href: Option<String> = None;
     let mut ncx_href: Option<String> = None;
@@ -331,12 +367,18 @@ pub fn epub_read(path: String) -> Result<EpubContent, String> {
             format!("{}/{}", opf_dir, item.href)
         };
 
-        if item.media_type.starts_with("image/") {
-            if let Ok(data) = read_zip_bytes(&mut archive, &full_href) {
-                resources.insert(
-                    resolve_path(&opf_dir, &item.href),
-                    (item.media_type.clone(), data),
-                );
+        if item.media_type.starts_with("image/") && image_bytes_loaded < MAX_EPUB_IMAGE_TOTAL_BYTES
+        {
+            if let Ok(data) = read_zip_bytes_limited(&mut archive, &full_href, MAX_EPUB_IMAGE_BYTES)
+            {
+                let data_len = data.len() as u64;
+                if image_bytes_loaded.saturating_add(data_len) <= MAX_EPUB_IMAGE_TOTAL_BYTES {
+                    image_bytes_loaded = image_bytes_loaded.saturating_add(data_len);
+                    resources.insert(
+                        resolve_path(&opf_dir, &item.href),
+                        (item.media_type.clone(), data),
+                    );
+                }
             }
         }
 
@@ -376,15 +418,25 @@ pub fn epub_read(path: String) -> Result<EpubContent, String> {
 
     // 5. Cover image
     let cover_base64 = cover_href.and_then(|href| {
-        resources.get(&resolve_path(&opf_dir, &href.replace(&format!("{}/", opf_dir), "")))
+        resources
+            .get(&resolve_path(
+                &opf_dir,
+                &href.replace(&format!("{}/", opf_dir), ""),
+            ))
             .map(|(mt, data)| format!("data:{};base64,{}", mt, BASE64.encode(data)))
             .or_else(|| {
-                read_zip_bytes(&mut archive, &href).ok().map(|data| {
-                    let mt = if href.ends_with(".png") { "image/png" }
-                    else if href.ends_with(".gif") { "image/gif" }
-                    else { "image/jpeg" };
-                    format!("data:{};base64,{}", mt, BASE64.encode(&data))
-                })
+                read_zip_bytes_limited(&mut archive, &href, MAX_EPUB_IMAGE_BYTES)
+                    .ok()
+                    .map(|data| {
+                        let mt = if href.ends_with(".png") {
+                            "image/png"
+                        } else if href.ends_with(".gif") {
+                            "image/gif"
+                        } else {
+                            "image/jpeg"
+                        };
+                        format!("data:{};base64,{}", mt, BASE64.encode(&data))
+                    })
             })
     });
 
@@ -405,7 +457,10 @@ pub fn epub_read(path: String) -> Result<EpubContent, String> {
             format!("{}/{}", opf_dir, item.href)
         };
 
-        let chapter_dir = full_href.rsplit_once('/').map(|(d, _)| d.to_string()).unwrap_or_default();
+        let chapter_dir = full_href
+            .rsplit_once('/')
+            .map(|(d, _)| d.to_string())
+            .unwrap_or_default();
 
         let raw_html = match read_zip_text(&mut archive, &full_href) {
             Ok(h) => h,
@@ -473,14 +528,28 @@ pub fn epub_read(path: String) -> Result<EpubContent, String> {
 // ── ZIP helpers ─────────────────────────────────────────────────
 
 fn read_zip_text(archive: &mut ZipArchive<BufReader<File>>, name: &str) -> Result<String, String> {
-    let mut entry = archive.by_name(name).map_err(|e| format!("{}: {}", name, e))?;
+    let mut entry = archive
+        .by_name(name)
+        .map_err(|e| format!("{}: {}", name, e))?;
     let mut buf = String::new();
     entry.read_to_string(&mut buf).map_err(|e| e.to_string())?;
     Ok(buf)
 }
 
-fn read_zip_bytes(archive: &mut ZipArchive<BufReader<File>>, name: &str) -> Result<Vec<u8>, String> {
-    let mut entry = archive.by_name(name).map_err(|e| format!("{}: {}", name, e))?;
+fn read_zip_bytes_limited(
+    archive: &mut ZipArchive<BufReader<File>>,
+    name: &str,
+    max_bytes: u64,
+) -> Result<Vec<u8>, String> {
+    let mut entry = archive
+        .by_name(name)
+        .map_err(|e| format!("{}: {}", name, e))?;
+    if entry.size() > max_bytes {
+        return Err(format!(
+            "EPUB resource exceeds {} MB preview limit",
+            max_bytes / (1024 * 1024)
+        ));
+    }
     let mut buf = Vec::with_capacity(entry.size() as usize);
     entry.read_to_end(&mut buf).map_err(|e| e.to_string())?;
     Ok(buf)
@@ -493,7 +562,10 @@ fn extract_body(html: &str) -> String {
     let body_end = lower.find("</body>");
 
     if let (Some(start), Some(end)) = (body_start, body_end) {
-        let content_start = html[start..].find('>').map(|p| start + p + 1).unwrap_or(start);
+        let content_start = html[start..]
+            .find('>')
+            .map(|p| start + p + 1)
+            .unwrap_or(start);
         html[content_start..end].to_string()
     } else {
         html.to_string()

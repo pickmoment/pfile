@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import {
   ZoomIn,
   ZoomOut,
@@ -111,7 +111,9 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
 
   const dataUri = isSvg && textContent
     ? `data:image/svg+xml;utf8,${encodeURIComponent(textContent)}`
-    : `data:${mimeType};base64,${binaryBase64}`;
+    : binaryBase64
+    ? `data:${mimeType};base64,${binaryBase64}`
+    : convertFileSrc(file.path);
 
   // Reset zoom/pan when file changes
   useEffect(() => {

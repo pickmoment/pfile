@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronRight, MoreVertical, Edit2, Trash2, FolderSearch, CheckSquare, Square } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { FileMetadata } from '../../types/file';
@@ -17,22 +17,21 @@ interface FileTreeNodeProps {
   onDeleteRequest: (file: FileMetadata) => void;
 }
 
-export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
+export const FileTreeNode = React.memo(({
   file,
   depth = 0,
   visibleFiles = [],
   onContextMenu,
   onRenameRequest,
   onDeleteRequest,
-}) => {
-  const selectedFile = useFileStore((s) => s.selectedFile);
-  const selectedPaths = useFileStore((s) => s.selectedPaths);
+}: FileTreeNodeProps) => {
+  const isSelected = useFileStore((s) => s.selectedFile?.path === file.path);
+  const isPartiallySelected = useFileStore((s) => s.selectedPaths.includes(file.path));
+  const selectedCount = useFileStore((s) => s.selectedPaths.length);
   const setSelectedFile = useFileStore((s) => s.setSelectedFile);
   const toggleSelectPath = useFileStore((s) => s.toggleSelectPath);
   const selectRange = useFileStore((s) => s.selectRange);
-  const expandedDirs = useFileStore((s) => s.expandedDirs);
   const toggleDirExpanded = useFileStore((s) => s.toggleDirExpanded);
-  const dirCache = useFileStore((s) => s.dirCache);
   const refreshDirectory = useFileStore((s) => s.refreshDirectory);
   const searchQuery = useFileStore((s) => s.searchQuery);
   const categoryFilter = useFileStore((s) => s.categoryFilter);
@@ -46,11 +45,9 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isSelected = selectedFile?.path === file.path;
-  const isPartiallySelected = selectedPaths.includes(file.path);
-  const hasMultipleSelected = selectedPaths.length > 1;
-  const isExpanded = expandedDirs.has(file.path);
-  const childFiles = file.is_dir ? dirCache[file.path] || [] : [];
+  const hasMultipleSelected = selectedCount > 1;
+  const isExpanded = useFileStore((s) => s.expandedDirs.has(file.path));
+  const childFiles = useFileStore((s) => (file.is_dir ? s.dirCache[file.path] || [] : []));
 
   useEffect(() => {
     if (isInlineRenaming) {
@@ -115,6 +112,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   // Drag and Drop
   const handleDragStart = (e: React.DragEvent) => {
+    const selectedPaths = useFileStore.getState().selectedPaths;
     if (isPartiallySelected && selectedPaths.length > 1) {
       e.dataTransfer.setData('text/plain', selectedPaths.join('\n'));
       e.dataTransfer.setData('application/json', JSON.stringify(selectedPaths));
@@ -179,10 +177,10 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   };
 
   // Filter child files
-  const filteredChildren = childFiles.filter((child) =>
-    isFileVisible(child, showHiddenFiles, searchQuery, categoryFilter)
+  const filteredChildren = useMemo(
+    () => childFiles.filter((child) => isFileVisible(child, showHiddenFiles, searchQuery, categoryFilter)),
+    [childFiles, showHiddenFiles, searchQuery, categoryFilter],
   );
-
   return (
     <div className="select-none text-xs">
       <div
@@ -337,7 +335,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
               e.stopPropagation();
               onDeleteRequest(file);
             }}
-            title={isPartiallySelected && selectedPaths.length > 1 ? `Delete ${selectedPaths.length} items` : 'Delete'}
+            title={isPartiallySelected && selectedCount > 1 ? `Delete ${selectedCount} items` : 'Delete'}
             className="p-0.5 rounded hover:bg-[var(--danger-bg)] text-[var(--tx4)] hover:text-[var(--danger-text)]"
           >
             <Trash2 className="w-3 h-3" />
@@ -382,4 +380,4 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
       )}
     </div>
   );
-};
+});
