@@ -462,7 +462,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                 <FrontmatterTable entries={parsedMarkdown.frontmatter} fontSize={11 * viewerFontScale / 100} />
               )}
               <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkMath]}
+                remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkMath]}
                 rehypePlugins={[rehypeKatex, rehypeRaw]}
                 components={{
                   ul: ({ node: _node, className, children, ...props }) => {
