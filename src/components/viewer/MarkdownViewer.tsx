@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import mermaid from 'mermaid';
 import { parse as parseYaml } from 'yaml';
 import Editor from '@monaco-editor/react';
@@ -536,6 +537,20 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                       />
                     );
                   },
+                  a: ({ node: _node, href, children, ...props }) => (
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        if (href && /^https?:\/\//i.test(href)) {
+                          e.preventDefault();
+                          void openUrl(href);
+                        }
+                      }}
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  ),
                 }}
               >
                 {parsedMarkdown.body}
