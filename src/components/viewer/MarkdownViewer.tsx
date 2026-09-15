@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -202,6 +202,30 @@ const MermaidFullscreenViewer: React.FC<{ svg: string; onClose: () => void }> = 
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [fitScale, setFitScale] = useState(1);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Compute the scale that fits the diagram to the available viewport so that
+  // "100%" means "fit to screen" instead of the mermaid SVG's raw intrinsic size.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const content = contentRef.current;
+    if (!canvas || !content) return;
+    const svgEl = content.querySelector('svg');
+    if (!svgEl) return;
+
+    const svgRect = svgEl.getBoundingClientRect();
+    const svgWidth = svgRect.width || 1;
+    const svgHeight = svgRect.height || 1;
+    const canvasRect = canvas.getBoundingClientRect();
+    const padding = 64;
+    const availableWidth = Math.max(canvasRect.width - padding, 1);
+    const availableHeight = Math.max(canvasRect.height - padding, 1);
+
+    const scale = Math.min(availableWidth / svgWidth, availableHeight / svgHeight);
+    setFitScale(scale > 0 ? scale : 1);
+  }, [svg]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -277,6 +301,7 @@ const MermaidFullscreenViewer: React.FC<{ svg: string; onClose: () => void }> = 
 
       {/* Pan/Zoom Canvas */}
       <div
+        ref={canvasRef}
         className="flex-1 overflow-hidden flex items-center justify-center select-none"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -286,8 +311,9 @@ const MermaidFullscreenViewer: React.FC<{ svg: string; onClose: () => void }> = 
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <div
+          ref={contentRef}
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${(fitScale * zoom) / 100})`,
             transformOrigin: 'center center',
             transition: isDragging ? 'none' : 'transform 0.1s ease-out',
           }}
