@@ -17,15 +17,19 @@ import {
   Minus,
   Plus,
   Type,
+  FileDown,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
+import { save } from '@tauri-apps/plugin-dialog';
 import { FileMetadata, TokenStats } from '../../types/file';
 import { getFileIcon } from '../../utils/fileIcons';
 import { formatBytes, formatNumber } from '../../utils/formatters';
 import { formatFileForLlmContext } from '../../utils/llmPrompt';
+import { buildStandaloneMarkdownHtml } from '../../utils/exportMarkdownHtml';
 import { useViewerStore } from '../../store/useViewerStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useFileStore } from '../../store/useFileStore';
+import { useThemeStore } from '../../store/useThemeStore';
 import { VIEWER_FONT_OPTIONS } from '../../utils/fontOptions';
 import { Modal } from '../common/Modal';
 
@@ -62,10 +66,12 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
   const addFavorite = useFileStore((s) => s.addFavorite);
   const removeFavorite = useFileStore((s) => s.removeFavorite);
   const showToast = useToastStore((s) => s.showToast);
+  const theme = useThemeStore((s) => s.theme);
 
   const [copiedLlm, setCopiedLlm] = useState(false);
   const [diffPickerOpen, setDiffPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingHtml, setIsExportingHtml] = useState(false);
 
   const handleCopyLlm = () => {
     const formatted = formatFileForLlmContext(file, content, tokenStats);
@@ -94,6 +100,28 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
       showToast('Error', msg, 'error');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleExportHtml = async () => {
+    setIsExportingHtml(true);
+    try {
+      const defaultName = file.name.replace(/\.[^./\\]+$/, '') + '.html';
+      const dest = await save({
+        title: 'Export as HTML',
+        defaultPath: defaultName,
+        filters: [{ name: 'HTML', extensions: ['html'] }],
+      });
+      if (!dest) return;
+
+      const html = await buildStandaloneMarkdownHtml(content, file.name, theme === 'dark');
+      await invoke('write_file_text', { path: dest, content: html });
+      showToast('Exported', `Saved rendered HTML to ${dest}`, 'success');
+    } catch (err: unknown) {
+      const msg = typeof err === 'string' ? err : err instanceof Error ? err.message : 'HTML export failed';
+      showToast('Error', msg, 'error');
+    } finally {
+      setIsExportingHtml(false);
     }
   };
 
@@ -356,6 +384,19 @@ export const ViewerHeader: React.FC<ViewerHeaderProps> = ({
           >
             <GitCompare className="w-3.5 h-3.5 text-indigo-400" />
             <span>Diff</span>
+          </button>
+        )}
+
+        {/* Export Rendered Markdown as Standalone HTML */}
+        {file.category === 'markdown' && (
+          <button
+            onClick={handleExportHtml}
+            disabled={isExportingHtml}
+            title="Export rendered preview as a standalone HTML file"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--s7)] hover:bg-[var(--s8)] border border-[var(--bd1)] text-[var(--tx2)] hover:text-[var(--tx1)] text-xs transition-colors disabled:opacity-50"
+          >
+            <FileDown className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{isExportingHtml ? 'Exporting...' : 'Export HTML'}</span>
           </button>
         )}
 

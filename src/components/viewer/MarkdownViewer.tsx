@@ -23,7 +23,7 @@ interface MarkdownViewerProps {
   onChange?: (newContent: string) => void;
   isEditing?: boolean;
 }
-interface ParsedMarkdown {
+export interface ParsedMarkdown {
   body: string;
   frontmatter: Array<[string, unknown]>;
 }
@@ -45,7 +45,7 @@ interface HeadingNode {
 
 const FRONTMATTER_PATTERN = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 
-const parseFrontmatter = (content: string): ParsedMarkdown => {
+export const parseFrontmatter = (content: string): ParsedMarkdown => {
   const match = content.match(FRONTMATTER_PATTERN);
   if (!match) return { body: content, frontmatter: [] };
 
