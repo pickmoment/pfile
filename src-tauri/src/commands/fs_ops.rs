@@ -216,26 +216,27 @@ fn read_file_text_blocking(path: String) -> Result<String, String> {
         }
     }
 
+    let file_size = fs::metadata(p).map(|m| m.len()).unwrap_or(0);
+    if file_size > MAX_TEXT_READ_BYTES as u64 {
+        return Err(format!(
+            "File too large to preview ({:.1} MB exceeds the {} MB preview limit)",
+            file_size as f64 / (1024.0 * 1024.0),
+            MAX_TEXT_READ_BYTES / (1024 * 1024)
+        ));
+    }
+
     let file = File::open(p).map_err(|e| format!("Failed to open file: {}", e))?;
     let mut buffer = Vec::new();
-    let mut take = file.take((MAX_TEXT_READ_BYTES + 1) as u64);
-    take.read_to_end(&mut buffer)
+    file.take((MAX_TEXT_READ_BYTES + 1) as u64)
+        .read_to_end(&mut buffer)
         .map_err(|e| format!("Failed to read file bytes: {}", e))?;
 
-    let is_truncated = buffer.len() > MAX_TEXT_READ_BYTES;
-    if is_truncated {
-        buffer.truncate(MAX_TEXT_READ_BYTES);
-    }
     let sample_len = buffer.len().min(4096);
     if buffer[..sample_len].contains(&0) {
         return Err("File appears to contain binary data".to_string());
     }
 
-    let mut text = String::from_utf8_lossy(&buffer).to_string();
-    if is_truncated {
-        text.push_str("\n\n--- [TRUNCATED: File exceeds 2MB preview limit] ---");
-    }
-    Ok(text)
+    Ok(String::from_utf8_lossy(&buffer).to_string())
 }
 
 #[tauri::command]
