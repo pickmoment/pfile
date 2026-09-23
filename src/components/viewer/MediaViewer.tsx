@@ -343,7 +343,9 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
               <h3 className="text-sm font-semibold text-[var(--tx1)] truncate max-w-xs">{file.name}</h3>
               <p className="text-xs text-[var(--tx5)] mt-1">{formatBytes(file.size)}</p>
             </div>
-            <audio src={dataUri} controls className="w-full" onTimeUpdate={handleTimeUpdate} />
+            <audio controls className="w-full" onTimeUpdate={handleTimeUpdate}>
+              <source src={dataUri} type={mimeType} />
+            </audio>
             {subtitleCues.length > 0 && subtitlesEnabled && (
               <p className="text-center text-sm text-[var(--tx1)] min-h-[1.5em] px-2 whitespace-pre-line">
                 {activeCueText}
@@ -354,7 +356,8 @@ export const MediaViewer: React.FC<MediaViewerProps> = ({
 
         {isVideo && (
           <div className="max-w-4xl max-h-full flex items-center justify-center bg-black rounded-xl overflow-hidden shadow-2xl border border-[var(--bd2)]">
-            <video src={dataUri} controls className="w-full h-full max-h-[70vh]">
+            <video controls className="w-full h-full max-h-[70vh]">
+              <source src={dataUri} type={mimeType} />
               {subtitleTrackUrl && (
                 <track
                   ref={trackRef}
